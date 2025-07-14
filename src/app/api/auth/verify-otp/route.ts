@@ -9,18 +9,17 @@ export const POST = async (req: Request) => {
   try {
     await connectDB();
 
-    const { email, otp } = await req.json();
+    const { email, otp, type } = await req.json();
 
-    if (!email || !otp) {
+    if (!email || !otp || !type) {
       return NextResponse.json(
-        { success: false, message: "Email and OTP are required." },
+        { success: false, message: "Email, OTP, and type are required." },
         { status: 400 }
       );
     }
 
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedOtp = otp.trim();
-
     const user = await User.findOne({ email: trimmedEmail });
 
     if (!user) {
@@ -45,13 +44,25 @@ export const POST = async (req: Request) => {
       );
     }
 
-    user.isVerified = true;
-    user.otp = null;
-    user.otpExpiresAt = null;
+    // ✅ Clear OTP fields
+
+
+    if (type === "verify-email") {
+      user.isVerified = true;
+      user.otp = null;
+      user.otpExpiresAt = null;
+    }
+
     await user.save();
 
     return NextResponse.json(
-      { success: true, message: "Email verified successfully." },
+      {
+        success: true,
+        message:
+          type === "verify-email"
+            ? "Email verified successfully."
+            : "OTP verified successfully.",
+      },
       { status: 200 }
     );
   } catch (error) {
