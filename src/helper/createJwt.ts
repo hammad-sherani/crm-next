@@ -1,6 +1,5 @@
 import jwt from "jsonwebtoken";
 import  User  from "../models/user.model.js"; 
-import { handleApiError } from "./handleError.js";
 
 interface JwtPayload {
   id: string;
@@ -27,6 +26,6 @@ export const createJwt = async (user: typeof User.prototype): Promise<string> =>
 
     return token;
   } catch (error) {
-    handleApiError(error);
+    console.log(error);
   }
 };
