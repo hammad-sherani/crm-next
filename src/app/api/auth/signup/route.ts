@@ -36,6 +36,8 @@ export const POST = async (req: Request) => {
         const otp = generateOtp();
         const hashedOtp = await bcrypt.hash(otp, 10);
 
+        
+
         const newUser = new User({
             email,
             password: hashedPassword,
