@@ -1,15 +1,11 @@
-'use client'
-import React from 'react'
-import toast from 'react-hot-toast'
+import { LoginForm } from "@/components/login-form"
 
-
-
-function LoginPage() {
+export default function Page() {
   return (
-    <div onClick={() => toast('Login Page Clicked')}>
-      Login
+    <div className="flex min-h-svh w-full bg-neutral-950 items-center justify-center p-6 md:p-10">
+      <div className="w-full max-w-2xl">
+        <LoginForm  />
+      </div>
     </div>
   )
 }
-
-export default LoginPage
