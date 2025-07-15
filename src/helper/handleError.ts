@@ -1,6 +1,7 @@
-import toast from "react-hot-toast";
+
 import axios from "axios";
 import { NextResponse } from "next/server";
+import { toast } from "sonner";
 
 
 export const handleError = (error: any): string => {
@@ -9,10 +10,13 @@ export const handleError = (error: any): string => {
   // Axios error
   if (axios.isAxiosError(error)) {
     if (error.response) {
-      const status = error.response.status;
+      // const status = error.response.status;
       const apiMessage = error.response.data?.message || error.message;
-      message = `Error ${status}: ${apiMessage}`;
-      toast.error(message);
+      message = ` ${apiMessage}`;
+      toast.error(message, {
+        position: "top-center",
+        duration: 3000,
+      });
     } else if (error.request) {
       message = "No response from server. Please check your connection.";
       toast.error(message);
