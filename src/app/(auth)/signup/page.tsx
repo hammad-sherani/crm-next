@@ -29,6 +29,7 @@ type FormData = yup.InferType<typeof schema>
 
 interface SignUpFormProps extends React.ComponentProps<"div"> {
   onSuccess?: () => void
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   onError?: (error: any) => void
 }
 
@@ -73,6 +74,7 @@ export default function SignUpForm({
   })
 
   const onSubmit = (data: FormData) => {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     const { confirmPassword, ...submitData } = data
     mutation.mutate(submitData as FormData)
   }
@@ -191,6 +193,7 @@ export default function SignUpForm({
 }
 
 // Properly typed FormField component
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 interface FormFieldProps<T extends Record<string, any>> {
   name: Path<T>
   label: string
@@ -202,6 +205,7 @@ interface FormFieldProps<T extends Record<string, any>> {
   autoComplete?: string
 }
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 function FormField<T extends Record<string, any>>({
   name,
   label,
@@ -244,7 +248,6 @@ function FormField<T extends Record<string, any>>({
   )
 }
 
-// Improved password toggle component
 interface PasswordToggleProps {
   visible: boolean
   onToggle: () => void
