@@ -49,7 +49,7 @@ export const POST = async (req: Request) => {
     const token = await createJwt(user);
 
     // ✅ Set JWT cookie
-    cookies().set("token", token, {
+    (await cookies()).set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "strict",

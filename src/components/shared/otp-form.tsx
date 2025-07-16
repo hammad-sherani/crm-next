@@ -1,68 +1,67 @@
-"use client"
+/* eslint-disable @typescript-eslint/no-explicit-any */
+"use client";
 
-import * as React from "react"
+import * as React from "react";
 import {
   InputOTP,
   InputOTPGroup,
   InputOTPSlot,
-} from "@/components/ui/input-otp"
-import { Button } from "@/components/ui/button"
-import { toast } from "sonner"
-import { useMutation } from "@tanstack/react-query"
-import axiosInstance from "@/lib/axios"
+} from "@/components/ui/input-otp";
+import { Button } from "@/components/ui/button";
+import { toast } from "sonner";
+import { useMutation } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
 
 export default function InputOTPControlled({
   handleOTPSubmit,
   isLoading,
   email,
-  type = "verify-email"
+  type = "verify-email",
 }: {
-  handleOTPSubmit: (otp: string) => void
-  isLoading: boolean
-  email: string
-    type: string
+  handleOTPSubmit: (otp: string) => void;
+  isLoading: boolean;
+  email: string;
+  type: string;
 }) {
-  const [value, setValue] = React.useState("")
-  const [resendTimer, setResendTimer] = React.useState(120)
+  const [value, setValue] = React.useState("");
+  const [resendTimer, setResendTimer] = React.useState(120);
 
   React.useEffect(() => {
-    let timer: NodeJS.Timeout
+    let timer: NodeJS.Timeout;
     if (resendTimer > 0) {
-      timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000)
+      timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
     }
-    return () => clearTimeout(timer)
-  }, [resendTimer])
+    return () => clearTimeout(timer);
+  }, [resendTimer]);
 
   const resendOtpMutation = useMutation({
     mutationFn: async () => {
-      const res = await axiosInstance.get(`/auth/resend-otp?email=${email}&type=${type}`)
-      return res.data
+      const res = await axiosInstance.get(`/auth/resend-otp?email=${email}&type=${type}`);
+      return res.data;
     },
     onSuccess: () => {
       toast.success("OTP has been resent successfully", {
         position: "top-center",
-      })
-      setResendTimer(120) 
+      });
+      setResendTimer(120);
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
-      toast.error(
-        error?.response?.data?.message || "Failed to resend OTP",
-        { position: "top-center" }
-      )
+      toast.error(error?.response?.data?.message || "Failed to resend OTP", {
+        position: "top-center",
+      });
     },
-  })
+  });
 
   const handleSubmit = () => {
     if (value.length === 6) {
-      handleOTPSubmit(value)
+      handleOTPSubmit(value);
     } else {
       toast.error("Please enter a valid 6-digit OTP", {
         position: "top-center",
         duration: 3000,
-      })
+      });
     }
-  }
+  };
 
   return (
     <div className="flex flex-col items-center gap-6 max-w-sm mx-auto mt-14 px-4">
@@ -96,7 +95,9 @@ export default function InputOTPControlled({
 
       <div className="text-sm text-muted-foreground text-center">
         {value ? (
-          <>You entered: <span className="font-medium">{value}</span></>
+          <>
+            You entered: <span className="font-medium">{value}</span>
+          </>
         ) : (
           <>Awaiting input…</>
         )}
@@ -106,10 +107,10 @@ export default function InputOTPControlled({
         <Button
           variant="link"
           onClick={() => resendOtpMutation.mutate()}
-          disabled={resendTimer > 0 || resendOtpMutation.isLoading}
+          disabled={resendTimer > 0 || resendOtpMutation.isPending}
           className="text-sm"
         >
-          {resendOtpMutation.isLoading
+          {resendOtpMutation.isPending
             ? "Resending..."
             : resendTimer > 0
             ? `Resend OTP in ${resendTimer}s`
@@ -117,5 +118,5 @@ export default function InputOTPControlled({
         </Button>
       </div>
     </div>
-  )
+  );
 }

@@ -1,9 +1,11 @@
+/* eslint-disable @typescript-eslint/no-explicit-any */
 
 import axios from "axios";
 import { NextResponse } from "next/server";
 import { toast } from "sonner";
 
 
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 export const handleError = (error: any): string => {
   let message = "An unexpected error occurred";
 

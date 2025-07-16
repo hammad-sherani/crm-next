@@ -10,7 +10,7 @@ import axiosInstance from "@/lib/axios"
 import { handleError } from "@/helper/handleError"
 import useAuthStore from "@/store/auth.store"
 
-const VERIFICATION_TYPE = new URLSearchParams(window.location.search).get("type") || "verify-email"
+const VERIFICATION_TYPE = "verify-email"
 export default function VerifyEmail() {
   const router = useRouter()
 

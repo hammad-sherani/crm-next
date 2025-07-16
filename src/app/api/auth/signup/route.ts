@@ -53,7 +53,7 @@ export const POST = async (req: Request) => {
         const token = await createJwt(newUser);
 
         const cookieStore = cookies();
-        cookieStore.set("token", token, {
+        (await cookieStore).set("token", token, {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",

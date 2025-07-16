@@ -94,6 +94,14 @@ const userSchema = new Schema(
         ref: "Leave",
       },
     ],
+    passwordResetToken: {
+      type: String,
+      default: null,
+    },
+    passwordResetExpires: {
+      type: Date,
+      default: null,
+    }
   },
   { timestamps: true }
 );

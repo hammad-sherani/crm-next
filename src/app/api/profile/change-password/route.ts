@@ -11,7 +11,7 @@ export const POST = async (req: Request) => {
 
     const { oldPassword, newPassword } = await req.json();
     const cookieStore = cookies();
-    const token = cookieStore.get("token")?.value;
+    const token = (await cookieStore).get("token")?.value;
 
     if (!token) {
       return NextResponse.json(

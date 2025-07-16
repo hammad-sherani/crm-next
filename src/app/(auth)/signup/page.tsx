@@ -16,6 +16,7 @@ import axios from "@/lib/axios"
 import { toast } from "sonner"
 import { useRouter } from "next/navigation"
 import useAuthStore from "@/store/auth.store"
+import { handleError } from "@/helper/handleError"
 
 const schema = yup.object({
     username: yup.string().required("Username is required").min(3, "Username must be at least 3 characters"),
@@ -29,24 +30,15 @@ const schema = yup.object({
 
 type FormData = yup.InferType<typeof schema>
 
-interface SignUpFormProps extends React.ComponentProps<"div"> {
-    onSuccess?: () => void
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    onError?: (error: any) => void
-}
 
-export default function SignUpForm({
-    className,
-    onSuccess,
-    onError,
-    ...props
-}: SignUpFormProps) {
+
+function SignUpForm() {
     const [showPassword, setShowPassword] = useState(false)
     const [showConfirmPassword, setShowConfirmPassword] = useState(false)
     const router = useRouter()
 
 
-    const {setUser}  = useAuthStore()
+    const { setUser } = useAuthStore()
 
     const {
         register,
@@ -61,23 +53,17 @@ export default function SignUpForm({
     const mutation = useMutation({
         mutationFn: (data: FormData) => axios.post("/auth/signup", data),
         onSuccess: (response) => {
-            console.log("User signed up successfully", response)
             reset()
-            onSuccess?.()
             setUser(response.data.user)
             router.push(`/verify-email?type=verify-email`)
-            toast.success("Account created successfully! Please check your email to verify your account.", {
-                position: "top-center",
-                duration: 3000,
-            })            
-        },
-        onError: (error) => {
-            console.error("Signup failed", error)
-            onError?.(error)
-            toast.error("Failed to create account. Please try again.", {
+            toast.success(response.data.message, {
                 position: "top-center",
                 duration: 3000,
             })
+        },
+        onError: (error) => {
+            console.error("Signup failed", error)
+            handleError(error)
         },
     })
 
@@ -90,7 +76,7 @@ export default function SignUpForm({
     return (
         <div className="flex min-h-svh w-full items-center justify-center p-6 md:p-10">
             <div className="w-full max-w-sm">
-                <div className={cn("flex flex-col gap-6", className)} {...props}>
+                <div className="flex flex-col gap-6">
                     <Card className="overflow-hidden">
                         <CardContent className="p-6 md:p-8">
                             <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
@@ -276,3 +262,7 @@ function PasswordToggle({ visible, onToggle }: PasswordToggleProps) {
         </button>
     )
 }
+
+
+
+export default SignUpForm
