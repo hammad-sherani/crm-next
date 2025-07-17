@@ -18,7 +18,6 @@ export const POST = async (req: Request) => {
 
     await connectDB();
 
-    // Decode JWT token
     const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
     const user = await User.findById(decoded.id);
 
@@ -34,7 +33,6 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // Hash and update password
     const hashedPassword = await bcrypt.hash(newPassword, 12);
     user.password = hashedPassword;
     user.passwordResetToken = undefined;
