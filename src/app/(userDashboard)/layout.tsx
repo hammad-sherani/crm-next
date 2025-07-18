@@ -25,9 +25,12 @@ function UserDashboardLayout({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (error || data?.success === false) {
-      router.replace("/login")
+      router.push("/login")
     }
   }, [data, error, router])
+
+
+  
 
   // if (isLoading) {
   //   return <div className="p-6 text-center">Checking authentication...</div>

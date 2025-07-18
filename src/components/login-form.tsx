@@ -13,10 +13,11 @@ import { Button } from "@/components/ui/button"
 import { Card, CardContent } from "@/components/ui/card"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
-import { toast } from "sonner" 
+import { toast } from "sonner"
 import axiosInstance from "@/lib/axios"
 import useAuthStore from "@/store/auth.store"
 import { handleError } from "@/helper/handleError"
+import { useRouter } from "next/navigation"
 
 // ✅ Yup schema
 const loginSchema = yup.object({
@@ -40,20 +41,22 @@ export function LoginForm({
     resolver: yupResolver(loginSchema),
   })
 
-  const {setUser} = useAuthStore()
+  const { setUser } = useAuthStore()
+
+  const router = useRouter()
 
   const loginMutation = useMutation({
     mutationFn: (data: LoginFormData) => axiosInstance.post("/auth/login", data),
     onSuccess: (res) => {
       toast.success(res.data.message || "Login successful")
-      setUser(res.data.user) 
+      setUser(res.data.user)
 
-      if(res.data.user.role === "user") {
-        window.location.href = "/"
+      if (res.data.user.role === "user") {
+        router.push("/user/dashboard")
       }
 
-      if(res.data.user.role === "admin") {
-        window.location.href = "/admin/dashboard"
+      if (res.data.user.role === "admin") {
+        router.push("/admin/dashboard")
       }
     },
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

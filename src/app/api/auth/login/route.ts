@@ -43,8 +43,8 @@ export const POST = async (req: Request) => {
     (await cookies()).set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
-      sameSite: "strict",
-      maxAge: 60 * 60, // 1 hour
+      sameSite: "lax",
+      maxAge: 60 * 60 * 12, // 1 hour
       path: "/",
     });
 

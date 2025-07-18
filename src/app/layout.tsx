@@ -5,6 +5,7 @@ import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import ReactQueryProvider from "@/components/providers/react-query-provider";
 
+
 const geistSans = Geist({
   variable: "--font-geist-sans",
   subsets: ["latin"],
@@ -25,6 +26,9 @@ export default function RootLayout({
 }: Readonly<{
   children: React.ReactNode;
 }>) {
+
+   
+
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
       <body
