@@ -1,5 +1,5 @@
-import { adminLinks } from "@/contents/adminDashboard";
-import { userLinks } from "@/contents/userDashboard";
+import { adminLinks } from "@/constants/adminDashboard";
+import { userLinks } from "@/constants/userDashboard";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
