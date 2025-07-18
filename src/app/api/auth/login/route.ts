@@ -1,4 +1,3 @@
-// app/api/auth/login/route.ts
 
 import { NextResponse } from "next/server";
 import User from "@/models/user.model";
@@ -39,16 +38,8 @@ export const POST = async (req: Request) => {
       );
     }
 
-    // if (!user.isVerified) {
-    //   return NextResponse.json(
-    //     { success: false, message: "Email not verified." },
-    //     { status: 403 }
-    //   );
-    // }
-
     const token = await createJwt(user);
 
-    // ✅ Set JWT cookie
     (await cookies()).set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",

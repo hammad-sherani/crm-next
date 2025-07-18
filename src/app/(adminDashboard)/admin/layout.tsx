@@ -8,7 +8,7 @@ import Sidebar from '@/components/shared/Sidebar'
 import Header from '@/components/shared/Header'
 
 
-function UserDashboardLayout({ children }: { children: React.ReactNode }) {
+function AdminLayout({ children }: { children: React.ReactNode }) {
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false);
 
 
@@ -49,4 +49,4 @@ function UserDashboardLayout({ children }: { children: React.ReactNode }) {
   )
 }
 
-export default UserDashboardLayout
+export default AdminLayout
