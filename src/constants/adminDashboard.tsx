@@ -17,11 +17,15 @@ export const adminLinks = [
 ];
 
 export interface User {
-  id: string;
-  name: string;
+  _id: string;
+  username: string;
   email: string;
   status: string;
 }
+
+
+
+
 
 export const columns: ColumnDef<User>[] = [
   {
@@ -44,8 +48,11 @@ export const columns: ColumnDef<User>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "name", // Changed from userName to name
-    header: "Name",
+    accessorKey: "username",
+    header: "User Name",
+    cell: ({ row }) => {
+      return <span className="font-medium capitalize">{row?.getValue("username")}</span>;
+    },
   },
   {
     accessorKey: "email",
@@ -62,15 +69,36 @@ export const columns: ColumnDef<User>[] = [
   {
     accessorKey: "status",
     header: "Status",
+    cell: ({ row }) => {
+      return <span className="capitalize">{row.getValue("status") ? row.getValue("status") : "NA"}</span>;
+    }
   },
   {
     id: "actions",
     header: "Actions",
     cell: () => {
       const actions = [
-        { label: "Edit", icon: "uil:edit", onClick: () => {}, variant: "secondary" },
-        { label: "View", icon: "grommet-icons:view", onClick: () => {}, variant: "secondary" },
-        { label: "Delete", icon: "uil:trash", onClick: () => {}, variant: "destructive" },
+        {
+          label: "Edit",
+          icon: "uil:edit",
+          onClick: () => { 
+
+          },
+          variant: "secondary"
+        },
+        {
+          label: "View",
+          icon: "grommet-icons:view",
+          onClick: () => { },
+          variant: "secondary"
+        },
+
+        {
+          label: "Delete",
+          icon: "uil:trash",
+          onClick:  () => {},
+          variant: "destructive"
+        },
       ] as const; // Use const assertion to narrow variant types
       return (
         <TooltipProvider>

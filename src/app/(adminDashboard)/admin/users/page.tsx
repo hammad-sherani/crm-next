@@ -10,7 +10,6 @@ import {
   ColumnFiltersState,
   SortingState,
 } from "@tanstack/react-table";
-
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import {
@@ -21,31 +20,34 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-
 import { columns, User } from "@/constants/adminDashboard";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
 
-// ✅ React Query hook without initialData
-const useUsers = () =>
+type Props = {
+  initialData: User[];
+};
+
+const useUsers = (initialData: User[]) =>
   useQuery<User[]>({
     queryKey: ["users"],
     queryFn: async () => {
       const res = await axiosInstance.get("/admin/users");
       return res.data.data as User[];
     },
+    initialData,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });
 
-export default function UserTable() {
-  const { data: users = [], isLoading } = useUsers();
+export default function UserTable({ initialData }: Props) {
+  const { data: users } = useUsers(initialData);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
   const table = useReactTable({
-    data: users,
+    data: users || [],
     columns,
     state: { sorting, columnFilters },
     onSortingChange: setSorting,
@@ -83,13 +85,7 @@ export default function UserTable() {
             ))}
           </TableHeader>
           <TableBody>
-            {isLoading ? (
-              <TableRow>
-                <TableCell colSpan={columns.length} className="h-24 text-center">
-                  Loading...
-                </TableCell>
-              </TableRow>
-            ) : table.getRowModel().rows.length ? (
+            {table.getRowModel().rows?.length ? (
               table.getRowModel().rows.map((row) => (
                 <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
                   {row.getVisibleCells().map((cell) => (
