@@ -65,6 +65,11 @@ const userSchema = new Schema(
       type: Boolean,
       default: true,
     },
+    status: {
+      type: String,
+      enum: ["active", "inactive", "banned", "pending"],
+      default: "pending",
+    },
     lastLogin: {
       type: Date,
       default: null,

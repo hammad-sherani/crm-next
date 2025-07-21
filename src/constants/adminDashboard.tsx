@@ -1,35 +1,27 @@
-"use client"
+import { ColumnDef } from "@tanstack/react-table";
+import { Checkbox } from "@/components/ui/checkbox";
+import { Button } from "@/components/ui/button";
+import { ArrowUpDown } from "lucide-react";
+import { Icon } from "@iconify/react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
-import { ColumnDef } from "@tanstack/react-table"
-import { Checkbox } from "@/components/ui/checkbox"
-import { Button } from "@/components/ui/button"
-import { ArrowUpDown, MoreHorizontal } from "lucide-react"
+export const adminLinks = [
+  { label: "Dashboard", icon: "heroicons:home-16-solid", href: "/admin/dashboard" },
+  { label: "Users", icon: "heroicons:user-group-16-solid", href: "/admin/users" },
+  { label: "Settings", icon: "heroicons:cog-16-solid", href: "/admin/settings" },
+];
 
- export const adminLinks = [
-      { label: "Dashboard", icon: "heroicons:home-16-solid", href: "/admin/dashboard" },
-      { label: "Users", icon: "heroicons:user-group-16-solid", href: "/admin/users" },
-      { label: "Settings", icon: "heroicons:cog-16-solid", href: "/admin/settings" },
-      // Add more links here...
-    ];
-
-
-export type User = {
-  id: string
-  email: string
-  status: string
-  amount: number
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  status: string;
 }
-
-export const userData: User[] = [
-  { id: "1", email: "ken99@example.com", status: "Success", amount: 316 },
-  { id: "2", email: "abe45@example.com", status: "Success", amount: 242 },
-  { id: "3", email: "monserrat44@example.com", status: "Processing", amount: 837 },
-  { id: "4", email: "silas22@example.com", status: "Success", amount: 874 },
-  { id: "5", email: "carmella@example.com", status: "Failed", amount: 721 },
-]
-
-
-
 
 export const columns: ColumnDef<User>[] = [
   {
@@ -37,14 +29,14 @@ export const columns: ColumnDef<User>[] = [
     header: ({ table }) => (
       <Checkbox
         checked={table.getIsAllPageRowsSelected()}
-        onCheckedChange={value => table.toggleAllPageRowsSelected(!!value)}
+        onCheckedChange={(value) => table.toggleAllPageRowsSelected(!!value)}
         aria-label="Select all"
       />
     ),
     cell: ({ row }) => (
       <Checkbox
         checked={row.getIsSelected()}
-        onCheckedChange={value => row.toggleSelected(!!value)}
+        onCheckedChange={(value) => row.toggleSelected(!!value)}
         aria-label="Select row"
       />
     ),
@@ -52,8 +44,8 @@ export const columns: ColumnDef<User>[] = [
     enableHiding: false,
   },
   {
-    accessorKey: "status",
-    header: "Status",
+    accessorKey: "name", // Changed from userName to name
+    header: "Name",
   },
   {
     accessorKey: "email",
@@ -68,26 +60,40 @@ export const columns: ColumnDef<User>[] = [
     ),
   },
   {
-    accessorKey: "amount",
-    header: "Amount",
-    cell: ({ row }) => {
-      const amount = parseFloat(row.getValue("amount"))
-      return <div>${amount.toFixed(2)}</div>
-    },
+    accessorKey: "status",
+    header: "Status",
   },
   {
-    header: "Actions",
     id: "actions",
-    cell: () => (
-      <div className="flex items-center space-x-2">
-      <Button variant="secondary" className="h-4 w-8 p-0">
-        <MoreHorizontal className="h-4 w-4" />
-      </Button>
-
-      <Button variant="secondary" className="h-4 w-8 p-0">
-        <MoreHorizontal className="h-4 w-4" />
-      </Button>
-      </div>
-    ),
+    header: "Actions",
+    cell: () => {
+      const actions = [
+        { label: "Edit", icon: "uil:edit", onClick: () => {}, variant: "secondary" },
+        { label: "View", icon: "grommet-icons:view", onClick: () => {}, variant: "secondary" },
+        { label: "Delete", icon: "uil:trash", onClick: () => {}, variant: "destructive" },
+      ] as const; // Use const assertion to narrow variant types
+      return (
+        <TooltipProvider>
+          <div className="flex items-center space-x-2">
+            {actions.map(({ label, icon, onClick, variant }, i) => (
+              <Tooltip key={i}>
+                <TooltipTrigger asChild>
+                  <Button
+                    variant={variant} // Type-safe: variant is 'secondary' | 'destructive'
+                    className="h-7 w-7 p-0 rounded-sm"
+                    onClick={onClick}
+                  >
+                    <Icon icon={icon} className="h-4 w-4" />
+                  </Button>
+                </TooltipTrigger>
+                <TooltipContent>
+                  <p>{label}</p>
+                </TooltipContent>
+              </Tooltip>
+            ))}
+          </div>
+        </TooltipProvider>
+      );
+    },
   },
-]
+];

@@ -1,9 +1,18 @@
-"use client"
+"use client";
 
-import { useReactTable, getCoreRowModel, getFilteredRowModel, getSortedRowModel, flexRender, ColumnFiltersState, SortingState } from "@tanstack/react-table"
-import * as React from "react"
-import { Input } from "@/components/ui/input"
-import { Button } from "@/components/ui/button"
+import * as React from "react";
+import {
+  useReactTable,
+  getCoreRowModel,
+  getFilteredRowModel,
+  getSortedRowModel,
+  flexRender,
+  ColumnFiltersState,
+  SortingState,
+} from "@tanstack/react-table";
+
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Table,
   TableHeader,
@@ -11,26 +20,40 @@ import {
   TableHead,
   TableRow,
   TableCell,
-} from "@/components/ui/table"
-import { userData, columns } from '@/constants/adminDashboard'
+} from "@/components/ui/table";
+
+import { columns, User } from "@/constants/adminDashboard";
+import { useQuery } from "@tanstack/react-query";
+import axiosInstance from "@/lib/axios";
+
+// ✅ React Query hook without initialData
+const useUsers = () =>
+  useQuery<User[]>({
+    queryKey: ["users"],
+    queryFn: async () => {
+      const res = await axiosInstance.get("/admin/users");
+      return res.data.data as User[];
+    },
+    refetchOnWindowFocus: false,
+    staleTime: 5 * 60 * 1000,
+  });
 
 export default function UserTable() {
-  const [sorting, setSorting] = React.useState<SortingState>([])
-  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([])
+  const { data: users = [], isLoading } = useUsers();
+
+  const [sorting, setSorting] = React.useState<SortingState>([]);
+  const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
   const table = useReactTable({
-    data: userData,
+    data: users,
     columns,
-    state: {
-      sorting,
-      columnFilters,
-    },
+    state: { sorting, columnFilters },
     onSortingChange: setSorting,
     onColumnFiltersChange: setColumnFilters,
     getCoreRowModel: getCoreRowModel(),
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
-  })
+  });
 
   return (
     <div className="space-y-4">
@@ -38,19 +61,18 @@ export default function UserTable() {
         <Input
           placeholder="Filter emails..."
           value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
-          onChange={(event) =>
-            table.getColumn("email")?.setFilterValue(event.target.value)
-          }
+          onChange={(e) => table.getColumn("email")?.setFilterValue(e.target.value)}
           className="max-w-sm"
         />
-        <Button className="ml-auto">Columns</Button>
+        <Button className="ml-auto">Add User</Button>
       </div>
+
       <div className="rounded-md border">
         <Table>
           <TableHeader>
-            {table.getHeaderGroups().map(headerGroup => (
+            {table.getHeaderGroups().map((headerGroup) => (
               <TableRow key={headerGroup.id}>
-                {headerGroup.headers.map(header => (
+                {headerGroup.headers.map((header) => (
                   <TableHead key={header.id}>
                     {header.isPlaceholder
                       ? null
@@ -61,25 +83,37 @@ export default function UserTable() {
             ))}
           </TableHeader>
           <TableBody>
-            {table.getRowModel().rows.map(row => (
-              <TableRow
-                key={row.id}
-                data-state={row.getIsSelected() && "selected"}
-              >
-                {row.getVisibleCells().map(cell => (
-                  <TableCell key={cell.id}>
-                    {flexRender(cell.column.columnDef.cell, cell.getContext())}
-                  </TableCell>
-                ))}
+            {isLoading ? (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  Loading...
+                </TableCell>
               </TableRow>
-            ))}
+            ) : table.getRowModel().rows.length ? (
+              table.getRowModel().rows.map((row) => (
+                <TableRow key={row.id} data-state={row.getIsSelected() && "selected"}>
+                  {row.getVisibleCells().map((cell) => (
+                    <TableCell key={cell.id}>
+                      {flexRender(cell.column.columnDef.cell, cell.getContext())}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              ))
+            ) : (
+              <TableRow>
+                <TableCell colSpan={columns.length} className="h-24 text-center">
+                  No results.
+                </TableCell>
+              </TableRow>
+            )}
           </TableBody>
         </Table>
       </div>
+
       <div className="text-sm text-muted-foreground">
         {table.getFilteredSelectedRowModel().rows.length} of{" "}
         {table.getFilteredRowModel().rows.length} row(s) selected.
       </div>
     </div>
-  )
+  );
 }

@@ -7,7 +7,7 @@ import { cookies } from "next/headers";
 import { connectDB } from "@/config/db";
 import { handleApiError } from "@/helper/handleError";
 import { generateOtp } from "@/helper/function";
-import { sendOtpEmail } from "@/helper/otpEmail";
+// import { sendOtpEmail } from "@/helper/otpEmail";
 import bcrypt from "bcrypt";
 
 export const POST = async (req: Request) => {
@@ -48,7 +48,7 @@ export const POST = async (req: Request) => {
         });
         await newUser.save();
 
-        await sendOtpEmail(email, otp);
+        // await sendOtpEmail(email, otp);
 
         const token = await createJwt(newUser);
 
@@ -57,7 +57,7 @@ export const POST = async (req: Request) => {
             httpOnly: true,
             secure: process.env.NODE_ENV === "production",
             sameSite: "strict",
-            maxAge: 60 * 60,
+            maxAge: 60 * 60 * 10, // 10 hours
             path: "/",
         });
 
