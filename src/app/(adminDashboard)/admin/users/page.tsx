@@ -20,9 +20,20 @@ import {
   TableRow,
   TableCell,
 } from "@/components/ui/table";
-import { columns, User } from "@/constants/adminDashboard";
+import { createColumns, User } from "@/constants/adminDashboard";
 import { useQuery } from "@tanstack/react-query";
 import axiosInstance from "@/lib/axios";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { useDeleteUser } from "@/hooks/admin/useUser";
 
 type Props = {
   initialData: User[];
@@ -42,9 +53,44 @@ const useUsers = (initialData: User[]) =>
 
 export default function UserTable({ initialData }: Props) {
   const { data: users } = useUsers(initialData);
+  const deleteUserMutation = useDeleteUser();
+  const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
+
+  // Action handlers
+  const handleEdit = (userId: string) => {
+    console.log("Edit user:", userId);
+    // Add your edit logic here
+    // e.g., navigate to edit page or open modal
+  };
+
+  const handleView = (userId: string) => {
+    console.log("View user:", userId);
+    // Add your view logic here
+    // e.g., navigate to user details page or open modal
+  };
+
+  const handleDelete = (userId: string) => {
+    setUserToDelete(userId);
+  };
+
+  const confirmDelete = () => {
+    if (userToDelete) {
+      deleteUserMutation.mutate(userToDelete, {
+        onSuccess: () => {
+          setUserToDelete(null);
+        },
+      });
+    }
+  };
+
+  // Create columns with action handlers
+  const columns = React.useMemo(
+    () => createColumns(handleEdit, handleView, handleDelete, deleteUserMutation.isPending),
+    [deleteUserMutation.isPending]
+  );
 
   const table = useReactTable({
     data: users || [],
@@ -110,6 +156,31 @@ export default function UserTable({ initialData }: Props) {
         {table.getFilteredSelectedRowModel().rows.length} of{" "}
         {table.getFilteredRowModel().rows.length} row(s) selected.
       </div>
+
+      {/* Delete Confirmation Dialog */}
+      <AlertDialog open={!!userToDelete} onOpenChange={() => setUserToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the user
+              and remove their data from our servers.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteUserMutation.isPending}>
+              Cancel
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={confirmDelete}
+              disabled={deleteUserMutation.isPending}
+              className="bg-red-600 hover:bg-red-700"
+            >
+              {deleteUserMutation.isPending ? "Deleting..." : "Delete"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

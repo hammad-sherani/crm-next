@@ -23,11 +23,13 @@ export interface User {
   status: string;
 }
 
-
-
-
-
-export const columns: ColumnDef<User>[] = [
+// Create columns function that accepts handlers
+export const createColumns = (
+  onEdit?: (userId: string) => void,
+  onView?: (userId: string) => void,
+  onDelete?: (userId: string) => void,
+  isDeleting?: boolean
+): ColumnDef<User>[] => [
   {
     id: "select",
     header: ({ table }) => (
@@ -76,30 +78,30 @@ export const columns: ColumnDef<User>[] = [
   {
     id: "actions",
     header: "Actions",
-    cell: () => {
+    cell: ({ row }) => {
+      const user = row.original;
+      
       const actions = [
         {
           label: "Edit",
           icon: "uil:edit",
-          onClick: () => { 
-
-          },
-          variant: "secondary"
+          onClick: () => onEdit?.(user._id),
+          variant: "secondary" as const
         },
         {
           label: "View",
           icon: "grommet-icons:view",
-          onClick: () => { },
-          variant: "secondary"
+          onClick: () => onView?.(user._id),
+          variant: "secondary" as const
         },
-
         {
           label: "Delete",
           icon: "uil:trash",
-          onClick:  () => {},
-          variant: "destructive"
+          onClick: () => onDelete?.(user._id),
+          variant: "destructive" as const
         },
-      ] as const; // Use const assertion to narrow variant types
+      ];
+
       return (
         <TooltipProvider>
           <div className="flex items-center space-x-2">
@@ -107,9 +109,10 @@ export const columns: ColumnDef<User>[] = [
               <Tooltip key={i}>
                 <TooltipTrigger asChild>
                   <Button
-                    variant={variant} // Type-safe: variant is 'secondary' | 'destructive'
+                    variant={variant}
                     className="h-7 w-7 p-0 rounded-sm"
                     onClick={onClick}
+                    disabled={label === "Delete" && isDeleting}
                   >
                     <Icon icon={icon} className="h-4 w-4" />
                   </Button>
@@ -125,3 +128,6 @@ export const columns: ColumnDef<User>[] = [
     },
   },
 ];
+
+// Keep the original columns export for backward compatibility
+export const columns: ColumnDef<User>[] = createColumns();
