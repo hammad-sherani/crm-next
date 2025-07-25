@@ -67,7 +67,7 @@ const userSchema = new Schema(
     },
     status: {
       type: String,
-      enum: ["active", "inactive", "banned", "pending"],
+      enum: ["active", "rejected", "banned", "pending"],
       default: "pending",
     },
     lastLogin: {

@@ -13,16 +13,19 @@ export async function middleware(req: NextRequest) {
     const { payload } = await jwtVerify(token, secret);
 
     const pathname = req.nextUrl.pathname;
-    const role = payload.role;
+    const role = payload.role as string;
 
-    const isAdminRoute = pathname.startsWith("/admin");
-    const isUserRoute = pathname.startsWith("/user");
+    const accessRules: Record<string, string[]> = {
+      "/admin": ["admin", "super-admin"],
+      "/user": ["user"],
+      "/super-admin": ["super-admin"],
+    };
 
-    if (isAdminRoute && role !== "admin") {
-      return NextResponse.redirect(new URL("/404", req.url));
-    }
+    const matchedPath = Object.keys(accessRules).find((prefix) =>
+      pathname.startsWith(prefix)
+    );
 
-    if (isUserRoute && role === "admin") {
+    if (matchedPath && !accessRules[matchedPath].includes(role)) {
       return NextResponse.redirect(new URL("/404", req.url));
     }
 

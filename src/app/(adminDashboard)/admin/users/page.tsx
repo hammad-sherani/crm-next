@@ -33,27 +33,24 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { useDeleteUser } from "@/hooks/admin/useUser";
+import { useDeleteUser, useStatusChange } from "@/hooks/admin/useUser";
 
-type Props = {
-  initialData: User[];
-};
 
-const useUsers = (initialData: User[]) =>
+const useUsers = () =>
   useQuery<User[]>({
     queryKey: ["users"],
     queryFn: async () => {
       const res = await axiosInstance.get("/admin/users");
       return res.data.data as User[];
     },
-    initialData,
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });
 
-export default function UserTable({ initialData }: Props) {
-  const { data: users } = useUsers(initialData);
+export default function UserTable() {
+  const { data: users, isLoading, error } = useUsers();
   const deleteUserMutation = useDeleteUser();
+  const statusChangeMutation = useStatusChange();
   const [userToDelete, setUserToDelete] = React.useState<string | null>(null);
 
   const [sorting, setSorting] = React.useState<SortingState>([]);
@@ -63,17 +60,20 @@ export default function UserTable({ initialData }: Props) {
   const handleEdit = (userId: string) => {
     console.log("Edit user:", userId);
     // Add your edit logic here
-    // e.g., navigate to edit page or open modal
   };
 
   const handleView = (userId: string) => {
     console.log("View user:", userId);
     // Add your view logic here
-    // e.g., navigate to user details page or open modal
   };
 
   const handleDelete = (userId: string) => {
     setUserToDelete(userId);
+  };
+
+  // Fixed: Wrap the mutation to match the expected signature
+  const handleStatusChange = (userId: string, status: string) => {
+    statusChangeMutation.mutate({ userId, status });
   };
 
   const confirmDelete = () => {
@@ -88,8 +88,8 @@ export default function UserTable({ initialData }: Props) {
 
   // Create columns with action handlers
   const columns = React.useMemo(
-    () => createColumns(handleEdit, handleView, handleDelete, deleteUserMutation.isPending),
-    [deleteUserMutation.isPending]
+    () => createColumns(handleEdit, handleView, handleDelete, handleStatusChange, deleteUserMutation.isPending),
+    [deleteUserMutation.isPending, statusChangeMutation.mutate]
   );
 
   const table = useReactTable({
@@ -102,6 +102,33 @@ export default function UserTable({ initialData }: Props) {
     getSortedRowModel: getSortedRowModel(),
     getFilteredRowModel: getFilteredRowModel(),
   });
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center">
+          <div className="h-9 w-72 bg-neutral-900 rounded animate-pulse"></div>
+          <div className="ml-auto h-9 w-20 bg-neutral-900 rounded animate-pulse"></div>
+        </div>
+        <div className="rounded-md border">
+          <div className="h-64 bg-neutral-900 animate-pulse"></div>
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="space-y-4">
+        <div className="text-center py-8">
+          <p className="text-red-500">Error loading users. Please try again.</p>
+          <Button onClick={() => window.location.reload()} className="mt-2">
+            Reload
+          </Button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-4">
