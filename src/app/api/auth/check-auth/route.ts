@@ -1,62 +1,22 @@
-import { NextResponse } from "next/server"
-import { cookies } from "next/headers"
-import jwt from "jsonwebtoken"
-import { connectDB } from "@/config/db"
-import User from "@/models/user.model"
+// app/api/auth/check-auth/route.ts
+import { NextResponse } from "next/server";
+import { cookies } from "next/headers";
+import jwt from "jsonwebtoken";
 
-interface JwtPayload {
-  id: string
-  iat: number
-  exp: number
-}
-
-export const GET = async () => {
+export async function GET() {
   try {
-    const cookieStore = cookies() // ✅ Not async
-    const token = (await cookieStore).get("token")?.value
+    const cookieStore = cookies();
+    const token = (await cookieStore).get("token")?.value;
 
     if (!token) {
-      return NextResponse.json(
-        { success: false, message: "Authentication token missing." },
-        { status: 401 }
-      )
+      return NextResponse.json({ success: false, message: "No token found" }, { status: 401 });
     }
 
-    await connectDB()
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!);
 
-    let decoded: JwtPayload
-
-    try {
-      decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload
-    } catch {
-      return NextResponse.json(
-        { success: false, message: "Invalid or expired token." },
-        { status: 401 }
-      )
-    }
-
-    const user = await User.findById(decoded.id).select("-password")
-
-    if (!user) {
-      return NextResponse.json(
-        { success: false, message: "User not found." },
-        { status: 404 }
-      )
-    }
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Authenticated successfully.",
-        user,
-      },
-      { status: 200 }
-    )
+    return NextResponse.json({ success: true, user: decoded }, { status: 200 });
   } catch (error) {
-    console.error("❌ Auth check error:", error)
-    return NextResponse.json(
-      { success: false, message: "Internal server error." },
-      { status: 500 }
-    )
+    console.error("Auth check failed:", error);
+    return NextResponse.json({ success: false, message: "Invalid or expired token" }, { status: 401 });
   }
 }

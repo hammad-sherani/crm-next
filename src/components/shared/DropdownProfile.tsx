@@ -10,8 +10,12 @@ import {
 } from "@/components/ui/dropdown-menu"
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LogOut, Settings, User } from "lucide-react"
+import { useLogout } from "@/hooks/useLogout";
 
 export default function DropdownProfile() {
+    const { mutate: logout, isPending } = useLogout();
+
+
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -37,9 +41,10 @@ export default function DropdownProfile() {
 
         <DropdownMenuSeparator />
 
-        <DropdownMenuItem className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30">
+        <DropdownMenuItem onClick={() => logout()} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/30">
+        
           <LogOut className="mr-2 h-4 w-4" />
-          <span>Logout</span>
+          <span>{isPending ? "Logging out..." : "Logout"}</span>
         </DropdownMenuItem>
       </DropdownMenuContent>
     </DropdownMenu>
