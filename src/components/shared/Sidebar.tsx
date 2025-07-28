@@ -1,5 +1,7 @@
 import { adminLinks } from "@/constants/adminDashboard";
+import { superAdminLinks } from "@/constants/superAdminDashboard";
 import { userLinks } from "@/constants/userDashboard";
+import useAuthStore from "@/store/auth.store";
 import { Icon } from "@iconify/react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -15,74 +17,45 @@ type DashboardLinksProps = {
 
 const DashboardLinks = ({ isSidebarCollapsed }: DashboardLinksProps) => {
   const pathname = usePathname();
+  const {user} = useAuthStore();
+  console.log(user);
+  
 
-  if (pathname.includes("admin")) {
-   
+  const getLinksByPath = () => {
+    if (user?.role.toLowerCase() == "admin") return adminLinks;
+    if (user?.role.toLowerCase() == "super_admin") return superAdminLinks;
+    return userLinks;
+  };
 
-    return (
-      <ul className="flex flex-col gap-1.5">
-        {adminLinks.map(({ label, icon, href }) => {
-          const isActive = pathname === href;
-
-          return (
-            <li key={label}>
-              <Link
-                href={href}
-                className={`flex items-center gap-2 p-2 rounded-md w-full transition-all duration-200 ${isActive
-                  ? "bg-white/10 text-white font-medium"
-                  : "hover:bg-white/10 text-white"
-                  }`}
-              >
-                <Icon
-                  icon={icon}
-                  className={`shrink-0 duration-300 ${isSidebarCollapsed ? "text-2xl" : "text-xl"
-                    }`}
-                />
-
-                <span
-                  className={`text-sm origin-left transition-all duration-300 ease-in-out whitespace-nowrap ${isSidebarCollapsed
-                    ? "opacity-0 translate-x-2 pointer-events-none"
-                    : "opacity-100 translate-x-0"
-                    }`}
-                >
-                  {label}
-                </span>
-              </Link>
-            </li>
-          );
-        })}
-      </ul>
-    );
-  }
-
-
+  const links = getLinksByPath();
 
   return (
     <ul className="flex flex-col gap-1.5">
-      {userLinks.map(({ label, icon, href }) => {
+      {links.map(({ label, icon, href }) => {
         const isActive = pathname === href;
 
         return (
           <li key={label}>
             <Link
               href={href}
-              className={`flex items-center gap-2 p-2 rounded-md w-full transition-all duration-200 ${isActive
-                ? "bg-white/10 text-white font-medium"
-                : "hover:bg-white/10 text-white"
-                }`}
-
+              className={`flex items-center gap-2 p-2 rounded-md w-full transition-all duration-200 ${
+                isActive
+                  ? "bg-white/10 text-white font-medium"
+                  : "hover:bg-white/10 text-white"
+              }`}
             >
               <Icon
                 icon={icon}
-                className={`shrink-0 duration-300 ${isSidebarCollapsed ? "text-2xl" : "text-xl"
-                  }`}
+                className={`shrink-0 duration-300 ${
+                  isSidebarCollapsed ? "text-2xl" : "text-xl"
+                }`}
               />
-
               <span
-                className={`text-sm origin-left transition-all duration-300 ease-in-out whitespace-nowrap ${isSidebarCollapsed
-                  ? "opacity-0 translate-x-2 pointer-events-none"
-                  : "opacity-100 translate-x-0"
-                  }`}
+                className={`text-sm origin-left transition-all duration-300 ease-in-out whitespace-nowrap ${
+                  isSidebarCollapsed
+                    ? "opacity-0 translate-x-2 pointer-events-none"
+                    : "opacity-100 translate-x-0"
+                }`}
               >
                 {label}
               </span>

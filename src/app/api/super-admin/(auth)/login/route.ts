@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import bcrypt from "bcrypt";
+import jwt from "jsonwebtoken";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
-import jwt from "jsonwebtoken";
 
 export async function POST(req: NextRequest) {
   try {
     const { email, password } = await req.json();
 
-    // Input Validation
     if (!email || !password) {
       return NextResponse.json(
         { message: "Email and password are required." },
@@ -18,15 +17,7 @@ export async function POST(req: NextRequest) {
 
     const admin = await prisma.superAdmin.findUnique({ where: { email } });
 
-    if (!admin) {
-      return NextResponse.json(
-        { message: "Invalid credentials." },
-        { status: 401 }
-      );
-    }
-
-    const isMatch = await bcrypt.compare(password, admin.password);
-    if (!isMatch) {
+    if (!admin || !(await bcrypt.compare(password, admin.password))) {
       return NextResponse.json(
         { message: "Invalid credentials." },
         { status: 401 }
@@ -39,18 +30,24 @@ export async function POST(req: NextRequest) {
       { expiresIn: "1d" }
     );
 
-    // Set Cookie
-    (await cookies()).set("token", token, {
+    const cookieStore = cookies();
+    (await cookieStore).set("token", token, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "lax",
-      maxAge: 60 * 60 * 24,
+      maxAge: 60 * 60 * 24, // 1 day
       path: "/",
     });
 
-    return NextResponse.json({ message: "Login successful" });
+    const user = {
+      name: admin.name,
+      email: admin.email,
+      role: admin.role,
+    };
+
+    return NextResponse.json({ message: "Login successful", user });
   } catch (error) {
-    console.error("Error during login:", error);
+    console.error("Login error:", error);
     return NextResponse.json(
       { message: "Internal server error" },
       { status: 500 }
