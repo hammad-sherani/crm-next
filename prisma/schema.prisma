@@ -20,6 +20,11 @@ enum Role {
   USER
 }
 
+enum ADMIN_STATUS {
+  PENDING
+  ACTIVE
+  BLOCK
+}
 
 model SuperAdmin {
   id        Int      @id @default(autoincrement())
@@ -30,41 +35,29 @@ model SuperAdmin {
   createdAt DateTime @default(now())
 }
 
-
-model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-
-  admins    Admin[]
-}
-
 model Admin {
-  id             String   @id @default(uuid())
-  email          String   @unique
-  password       String
-  name           String
-  role           Role     @default(ADMIN)
-  organization   Organization @relation(fields: [organizationId], references: [id])
-  organizationId String
-
-  users          User[]
-  createdAt      DateTime @default(now())
-  updatedAt      DateTime @updatedAt
+  id          String       @id @default(uuid())
+  email       String       @unique
+  password    String
+  name        String
+  role        Role         @default(ADMIN)
+  country     String
+  phoneNumber String       @unique
+  users       User[]
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  status      ADMIN_STATUS  @default(PENDING)
 }
 
 model User {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String
-  role      Role     @default(USER)
-  createdBy Admin    @relation(fields: [createdById], references: [id])
+  id          String @id @default(uuid())
+  email       String @unique
+  password    String
+  name        String
+  role        Role   @default(USER)
+  createdBy   Admin  @relation(fields: [createdById], references: [id])
   createdById String
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }
-
-

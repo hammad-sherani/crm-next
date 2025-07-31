@@ -5,13 +5,11 @@ import { useState } from "react";
 import { useForm } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
-import { useMutation } from "@tanstack/react-query";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
-import { toast } from "sonner";
-import useAuthStore from "@/store/auth.store";
+import { useRouter } from "next/navigation";
 
 type LoginFormInputs = {
   email: string;
@@ -25,7 +23,7 @@ const schema = yup.object({
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const {setUser} = useAuthStore()
+  const router = useRouter()
 
   const {
     register,
@@ -35,32 +33,23 @@ export default function LoginForm() {
     resolver: yupResolver(schema),
   });
 
-  const loginMutation = useMutation({
-    mutationFn: async (data: LoginFormInputs) => {
+  const onSubmit = async (data: LoginFormInputs) => {
+    try {
       const res = await fetch("/api/super-admin/login", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
       });
 
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || "Login failed");
-      }
-      return res.json();
-    },
-    onSuccess: (data) => {
-      toast.success(data?.message);
-      setUser(data.user)
-      console.log("Login success:", data);
-    },
-    onError: (error: any) => {
-      toast.error(error.message || "Login failed");
-    },
-  });
+      const result = await res.json();
 
-  const onSubmit = (data: LoginFormInputs) => {
-    loginMutation.mutate(data);
+      if (!res.ok) throw new Error(result.message || "Login failed");
+      router.push('/super-admin/dashboard')
+      console.log("Login success:", result);
+    } catch (error: any) {
+      console.error(error.message);
+      // handle error (e.g., show toast)
+    }
   };
 
   return (
@@ -96,8 +85,8 @@ export default function LoginForm() {
         {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
       </div>
 
-      <Button type="submit" className="w-full" disabled={loginMutation.isPending}>
-        {loginMutation.isPending ? "Logging in..." : "Login"}
+      <Button type="submit" className="w-full">
+        Login
       </Button>
     </form>
   );

@@ -15,7 +15,7 @@ export const useLogout = () => {
       queryClient.clear(); 
 
       const isSuperAdmin = pathname.startsWith("/super-admin");
-      const redirectTo = isSuperAdmin ? "/login" : "/login";
+      const redirectTo = isSuperAdmin ? "/super-admin/login" : "/login";
 
       setTimeout(() => {
         router.replace(redirectTo);

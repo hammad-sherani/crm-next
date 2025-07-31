@@ -2,40 +2,63 @@ import { NextRequest, NextResponse } from "next/server";
 import { jwtVerify } from "jose";
 
 export async function middleware(req: NextRequest) {
+  const { pathname } = req.nextUrl;
   const token = req.cookies.get("token")?.value;
 
-  if (!token) {
-    return NextResponse.redirect(new URL("/login", req.url));
-  }
+  const isLoginPage = pathname === "/super-admin/login";
 
-  try {
-    const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
-    const { payload } = await jwtVerify(token, secret);
+  if (token) {
+    try {
+      const secret = new TextEncoder().encode(process.env.JWT_SECRET!);
+      const { payload } = await jwtVerify(token, secret);
+      const role = payload.role as string;
 
-    const pathname = req.nextUrl.pathname;
-    const role = payload.role as string;
+      // ✅ Prevent logged-in user from accessing login page
+      if (isLoginPage && role === "SUPER_ADMIN") {
+        return NextResponse.redirect(new URL("/super-admin/dashboard", req.url));
+      }
 
-    const accessRules: Record<string, string[]> = {
-      "/admin": ["admin", "super-admin"],
-      "/user": ["user"],
-      "/super-admin": ["super-admin"],
-    };
+      // ✅ Access control
+      const accessRules: Record<string, string[]> = {
+        "/admin": ["admin", "SUPER_ADMIN"],
+        "/user": ["user"],
+        "/super-admin": ["SUPER_ADMIN"],
+      };
 
-    const matchedPath = Object.keys(accessRules).find((prefix) =>
-      pathname.startsWith(prefix)
-    );
+      const matchedPath = Object.keys(accessRules).find((prefix) =>
+        pathname.startsWith(prefix)
+      );
 
-    if (matchedPath && !accessRules[matchedPath].includes(role)) {
-      return NextResponse.redirect(new URL("/404", req.url));
+      if (matchedPath && !accessRules[matchedPath].includes(role)) {
+        return NextResponse.redirect(new URL("/404", req.url));
+      }
+
+    } catch (err) {
+      console.error("Invalid token:", err);
+      // Invalid token, clear cookie and redirect to login
+      const res = NextResponse.redirect(new URL("/super-admin/login", req.url));
+      res.cookies.set("token", "", { maxAge: 0 });
+      return res;
     }
+  } else {
+    // No token and trying to access protected route (but not login page)
+    const protectedPaths = ["/dashboard", "/admin", "/user", "/super-admin"];
+    const isProtected = protectedPaths.some(path => pathname.startsWith(path));
 
-    return NextResponse.next();
-  } catch (err) {
-    console.error("JWT verification failed:", err);
-    return NextResponse.redirect(new URL("/login", req.url));
+    if (isProtected && !isLoginPage) {
+      return NextResponse.redirect(new URL("/super-admin/login", req.url));
+    }
   }
+
+  return NextResponse.next();
 }
 
+// ✅ Don't run middleware on login page
 export const config = {
-  matcher: ["/admin/:path*", "/user/:path*"],
+  matcher: [
+    "/dashboard/:path*",
+    "/admin/:path*",
+    "/user/:path*",
+    "/super-admin/:path*",
+  ],
 };
