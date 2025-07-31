@@ -4,15 +4,8 @@ export async function POST() {
   try {
     const response = NextResponse.json({ message: "Logout successful" });
 
-    response.cookies.set({
-      name: "token",
-      value: "",
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "none",
-      maxAge: 0,
-      path: "/",
-    });
+    // ✅ Securely remove the token
+    response.cookies.delete("token");
 
     return response;
   } catch (error) {

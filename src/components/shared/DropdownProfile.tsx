@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 "use client"
 
 import {
@@ -11,17 +12,20 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar"
 import { LogOut, Settings, User } from "lucide-react"
 import { handleError } from "@/helper/handleError";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
 
 export default function DropdownProfile() {
-  // const { mutate: logout, isPending } = useLogout();
+  const router = useRouter()
 
   const logout = async () => {
     try {
-      const res = await fetch("/auth/logout", {
+      const res = await fetch("/api/auth/logout", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
       })
-      
+      toast.success("Logout Successfully")
+      router.push("/super-admin/login") 
     } catch (err) {
       handleError(err)
     }

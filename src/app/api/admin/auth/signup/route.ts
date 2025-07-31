@@ -6,37 +6,39 @@ export async function POST(req: NextRequest) {
   try {
     const { name, email, password, country, phoneNumber } = await req.json();
 
-    // Required field validation
-    const missingFields = [name, email, password, country, phoneNumber].some(
-      (field) => !field
-    );
-    if (missingFields) {
+    if (!name || !email || !password || !country || !phoneNumber) {
       return NextResponse.json(
         { message: "All fields are required." },
         { status: 400 }
       );
     }
 
-    // Check if email or phone number already exists
     const existingAdmin = await prisma.admin.findFirst({
       where: {
         OR: [{ email }, { phoneNumber }],
       },
     });
 
-    if (existingAdmin) {
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [{ email }],
+      },
+    });
+
+    if (existingAdmin || existingUser) {
       const conflictField =
-        existingAdmin.email === email ? "Email" : "Phone number";
+        existingAdmin?.email === email || existingUser?.email === email
+          ? "Email"
+          : "Phone number";
+
       return NextResponse.json(
-        { message: `${conflictField} is already in use.` },
+        { message: `${conflictField} already exists.` },
         { status: 409 }
       );
     }
 
-    // Hash the password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Create new admin
     const newAdmin = await prisma.admin.create({
       data: {
         name,
@@ -44,20 +46,20 @@ export async function POST(req: NextRequest) {
         password: hashedPassword,
         country,
         phoneNumber,
+        role: "ADMIN"
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        country: true,
+        phoneNumber: true,
+        createdAt: true,
       },
     });
 
     return NextResponse.json(
-      {
-        message: "User created successfully.",
-        user: {
-          id: newAdmin.id,
-          name: newAdmin.name,
-          email: newAdmin.email,
-          country: newAdmin.country,
-          phoneNumber: newAdmin.phoneNumber,
-        },
-      },
+      { message: "Admin created successfully.", user: newAdmin },
       { status: 201 }
     );
   } catch (error) {

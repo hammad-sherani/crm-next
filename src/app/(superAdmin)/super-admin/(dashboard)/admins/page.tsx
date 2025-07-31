@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import * as React from 'react';
@@ -34,40 +35,46 @@ type Admin = {
     email: string;
     country: string;
     phoneNumber: string;
-    status: 'active' | 'block' | 'pending';
+    status: 'ACTIVE' | 'BLOCK' | 'PENDING';
 };
 
-const adminData: Admin[] = [
-    {
-        id: '1',
-        name: 'John Doe',
-        email: 'john@example.com',
-        country: 'USA',
-        phoneNumber: '+1-123-456-7890',
-        status: 'active',
-    },
-    {
-        id: '2',
-        name: 'Jane Smith',
-        email: 'jane@example.com',
-        country: 'Canada',
-        phoneNumber: '+1-987-654-3210',
-        status: 'pending',
-    },
-];
+
 
 const AdminTable = () => {
     const [searchTerm, setSearchTerm] = React.useState('');
+   const [admins, setAdmins] = React.useState<Admin[]>([]);
+    const [loading, setLoading] = React.useState(true);
+
+    React.useEffect(() => {
+        const fetchAdmins = async () => {
+            try {
+                const res = await fetch("/api/super-admin/admin", { cache: "no-store" });
+                const data = await res.json();
+                    setAdmins(data.admins);
+            } catch (error) {
+                console.error("Failed to fetch admins:", error);
+            } finally {
+                setLoading(false);
+            }
+        };
+
+        fetchAdmins();
+    }, []);
+
+    console.log(admins);
+    
+
+
 
     const filteredData = React.useMemo(() => {
         const term = searchTerm.toLowerCase();
-        return adminData.filter(
+        return admins.filter(
             (admin) =>
                 admin.name.toLowerCase().includes(term) ||
                 admin.email.toLowerCase().includes(term) ||
                 admin.country.toLowerCase().includes(term)
         );
-    }, [searchTerm]);
+    }, [searchTerm, admins]);
 
     const columns = React.useMemo<ColumnDef<Admin>[]>(() => [
         {
@@ -119,9 +126,9 @@ const AdminTable = () => {
             header: 'Actions',
             cell: ({ row }) => {
                 const { status } = row.original;
-                const isRejectable = status === 'active' || status === 'pending';
-                const isActive = status === 'block' || status === 'pending';
-                const isPending = status === 'pending';
+                const isRejectable = status === 'ACTIVE' || status === 'PENDING';
+                const isActive = status === 'BLOCK' || status === 'PENDING';
+                const isPending = status === 'PENDING';
 
                 const ActionButton = ({
                     icon: Icon,
