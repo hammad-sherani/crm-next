@@ -90,7 +90,7 @@ const AdminTable = () => {
             accessorKey: 'email',
             header: 'Email',
             cell: ({ getValue }) => (
-                <a href={`mailto:${getValue()}`} className="text-blue-600 hover:underline dark:text-blue-400">
+                <a href={`mailto:${getValue()}`} className=" hover:underline ">
                     {getValue() as string}
                 </a>
             ),
