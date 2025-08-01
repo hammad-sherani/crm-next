@@ -18,7 +18,7 @@ type DashboardLinksProps = {
 const DashboardLinks = ({ isSidebarCollapsed }: DashboardLinksProps) => {
   const pathname = usePathname();
   const {user} = useAuthStore();
-  console.log(user);
+  console.log("sidebar User", user);
   
 
   const getLinksByPath = () => {
