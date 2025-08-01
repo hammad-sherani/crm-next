@@ -10,6 +10,8 @@ import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
 import { Eye, EyeOff } from "lucide-react";
 import { useRouter } from "next/navigation";
+import { handleError } from "@/helper/handleError";
+import useAuthStore from "@/store/auth.store";
 
 type LoginFormInputs = {
   email: string;
@@ -24,6 +26,7 @@ const schema = yup.object({
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
   const router = useRouter()
+  const {setUser} = useAuthStore()
 
   const {
     register,
@@ -41,14 +44,17 @@ export default function LoginForm() {
         body: JSON.stringify(data),
       });
 
-      const result = await res.json();
+      const user = await res.json();
+      // console.log(user, "user");
+      
 
-      if (!res.ok) throw new Error(result.message || "Login failed");
+      if (!res.ok) throw new Error(user.message || "Login failed");
       router.push('/super-admin/dashboard')
-      console.log("Login success:", result);
+      setUser(user?.user)
+      console.log("Login success:", user);
     } catch (error: any) {
       console.error(error.message);
-      // handle error (e.g., show toast)
+      handleError(error)
     }
   };
 
