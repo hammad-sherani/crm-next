@@ -3,7 +3,30 @@ import "./globals.css";
 import { Toaster } from "@/components/ui/sonner"
 import { ThemeProvider } from "@/components/theme-provider"
 import ReactQueryProvider from "@/components/providers/react-query-provider";
+import localFont from "next/font/local";
 
+
+
+// const mozila = localFont({
+//   src: [
+//     {
+//       path: "../../public/fonts/Mozilla-Regular.ttf",
+//        weight: "400",
+//         style: "normal",
+//     }
+//   ]
+ 
+// });
+const roboto = localFont({
+  src: [
+    {
+      path: "../../public/fonts/Roboto_SemiCondensed-Regular.ttf",
+       weight: "400",
+        style: "normal",
+    }
+  ]
+ 
+});
 
 
 export const metadata: Metadata = {
@@ -14,7 +37,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className="dark" suppressHydrationWarning>
-      <body className={`antialiased`}>
+      <body className={`antialiased ${roboto.className}`}>
         <ThemeProvider
           attribute="class"
           defaultTheme="system"
