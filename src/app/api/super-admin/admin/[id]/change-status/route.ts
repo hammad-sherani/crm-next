@@ -1,8 +1,8 @@
 import { prisma } from "@/lib/prisma";
 
-export const PATCH = async (req: Request, { params }: { params: { id: string } }) => {
+export const PATCH = async (req: Request, { params }: { params: Promise<{ id: string }> }) => {
   try {
-    const { id } = params;
+    const  id  = (await params).id
     const { statusName } = await req.json();
 
     const updatedAdmin = await prisma.admin.update({
