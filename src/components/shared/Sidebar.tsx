@@ -22,8 +22,8 @@ const DashboardLinks = ({ isSidebarCollapsed }: DashboardLinksProps) => {
   
 
   const getLinksByPath = () => {
-    if (user?.role.toLowerCase() == "admin") return adminLinks;
-    if (user?.role.toLowerCase() == "super_admin") return superAdminLinks;
+    if (user?.role == "ADMIN") return adminLinks;
+    if (user?.role == "SUPER_ADMIN") return superAdminLinks;
     return userLinks;
   };
 
