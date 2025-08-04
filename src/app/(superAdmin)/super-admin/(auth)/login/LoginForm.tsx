@@ -8,7 +8,7 @@ import * as yup from "yup";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
-import { Eye, EyeOff } from "lucide-react";
+import { Eye, EyeOff, Loader2 } from "lucide-react";
 import { useRouter } from "next/navigation";
 import { handleError } from "@/helper/handleError";
 import useAuthStore from "@/store/auth.store";
@@ -25,8 +25,9 @@ const schema = yup.object({
 
 export default function LoginForm() {
   const [showPassword, setShowPassword] = useState(false);
-  const router = useRouter()
-  const {setUser} = useAuthStore()
+  const [isLoading, setIsLoading] = useState(false);
+  const router = useRouter();
+  const { setUser } = useAuthStore();
 
   const {
     register,
@@ -37,6 +38,7 @@ export default function LoginForm() {
   });
 
   const onSubmit = async (data: LoginFormInputs) => {
+    setIsLoading(true);
     try {
       const res = await fetch("/api/super-admin/login", {
         method: "POST",
@@ -45,16 +47,16 @@ export default function LoginForm() {
       });
 
       const user = await res.json();
-      // console.log(user, "user");
-      
 
       if (!res.ok) throw new Error(user.message || "Login failed");
-      router.push('/super-admin/dashboard')
-      setUser(user?.user)
-      console.log("Login success:", user);
+
+      setUser(user?.user);
+      router.push("/super-admin/dashboard");
     } catch (error: any) {
       console.error(error.message);
-      handleError(error)
+      handleError(error);
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -91,8 +93,15 @@ export default function LoginForm() {
         {errors.password && <p className="text-sm text-red-500">{errors.password.message}</p>}
       </div>
 
-      <Button type="submit" className="w-full">
-        Login
+      <Button type="submit" className="w-full" disabled={isLoading}>
+        {isLoading ? (
+          <div className="flex items-center justify-center gap-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            Logging in...
+          </div>
+        ) : (
+          "Login"
+        )}
       </Button>
     </form>
   );

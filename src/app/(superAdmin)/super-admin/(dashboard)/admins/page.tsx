@@ -18,15 +18,9 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Check, X, Search, Loader2, Eye, Trash, MoreVertical, RefreshCw } from 'lucide-react';
+import { Check, X, Search, Loader2, Eye, Trash } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import {
-    DropdownMenu,
-    DropdownMenuTrigger,
-    DropdownMenuContent,
-    DropdownMenuItem,
-} from "@/components/ui/dropdown-menu";
 import { handleError } from '@/helper/handleError';
 import { toast } from 'sonner';
 import Link from 'next/link';
@@ -73,7 +67,7 @@ const TableSkeleton: React.FC = () => (
     <div className="space-y-4">
         <div className="flex items-center justify-between">
             <div className="relative w-full max-w-sm">
-                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-md animate-pulse" />
+                <div className="h-10 bg-gray-200 dark:bg-neutral-900 rounded-md animate-pulse" />
             </div>
         </div>
 
@@ -364,7 +358,7 @@ const AdminTable: React.FC = () => {
 
             {/* Table */}
             <div className="relative rounded-lg border border-gray-50 dark:border-neutral-800 bg-white dark:bg-neutral-900/30 shadow-sm">
-                <div className="absolute top-2 right-2">
+                {/* <div className="absolute top-2 right-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
                             <Button
@@ -390,7 +384,7 @@ const AdminTable: React.FC = () => {
                             <DropdownMenuItem>Settings</DropdownMenuItem>
                         </DropdownMenuContent>
                     </DropdownMenu>
-                </div>
+                </div> */}
 
                 <TooltipProvider>
                     <Table>
