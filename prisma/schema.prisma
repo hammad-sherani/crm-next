@@ -26,38 +26,22 @@ enum ADMIN_STATUS {
   BLOCK
 }
 
-model SuperAdmin {
-  id        Int      @id @default(autoincrement())
-  name      String
-  password  String
-  email     String   @unique
-  role      Role     @default(SUPER_ADMIN)
-  createdAt DateTime @default(now())
-}
-
-model Admin {
-  id          String       @id @default(uuid())
-  email       String       @unique
-  password    String
-  name        String
-  role        Role         @default(ADMIN)
-  country     String
-  phoneNumber String       @unique
-  users       User[]
-  createdAt   DateTime     @default(now())
-  updatedAt   DateTime     @updatedAt
-  status      ADMIN_STATUS  @default(PENDING)
-}
-
 model User {
-  id          String @id @default(uuid())
-  email       String @unique
-  password    String
+  id          String   @id @default(uuid())
   name        String
-  role        Role   @default(USER)
-  createdBy   Admin  @relation(fields: [createdById], references: [id])
-  createdById String
+  email       String   @unique
+  password    String
+  phoneNumber String?  // sirf Admin ke liye optional
+  country     String?  // sirf Admin ke liye optional
+  status      ADMIN_STATUS? // sirf Admin ke liye optional
+  role        Role     @default(USER)
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  // Self Relation (Admin → Users)
+  createdById String?
+  createdBy   User?      @relation("AdminCreatesUser", fields: [createdById], references: [id])
+  createdUsers User[]    @relation("AdminCreatesUser") // 👈 Opposite relation
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 }
+

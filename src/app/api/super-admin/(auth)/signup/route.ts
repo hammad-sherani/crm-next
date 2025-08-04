@@ -5,16 +5,21 @@ import bcrypt from "bcrypt";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
+    console.log(body);
+    
     const { name, email, password } = body;
 
     if (!name || !email || !password) {
       return NextResponse.json(
-        { error: "Name, email, and password are required." },
+        { message: "Name, email, and password are required." },
         { status: 400 }
       );
     }
 
-    const existingAdmin = await prisma.superAdmin.findUnique({
+    // return;
+
+
+    const existingAdmin = await prisma.user.findUnique({
       where: { email },
     });
 
@@ -28,11 +33,12 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
-    const newAdmin = await prisma.superAdmin.create({
+    const newAdmin = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
+        role: "SUPER_ADMIN"
       },
     });
 

@@ -13,7 +13,7 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const existingAdmin = await prisma.admin.findFirst({
+    const existingAdmin = await prisma.user.findFirst({
       where: {
         OR: [{ email }, { phoneNumber }],
       },
@@ -39,14 +39,15 @@ export async function POST(req: NextRequest) {
 
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    const newAdmin = await prisma.admin.create({
+    const newAdmin = await prisma.user.create({
       data: {
         name,
         email,
         password: hashedPassword,
         country,
         phoneNumber,
-        role: "ADMIN"
+        role: "ADMIN",
+        status: "PENDING"
       },
       select: {
         id: true,

@@ -1,5 +1,3 @@
-/* eslint-disable react-hooks/exhaustive-deps */
-/* eslint-disable @typescript-eslint/no-unused-vars */
 'use client';
 
 import * as React from 'react';
@@ -20,7 +18,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Check, X, Clock, Search, Loader2, Eye } from 'lucide-react';
+import { Check, X, Search, Loader2, Eye, Trash, MoreVertical, RefreshCw } from 'lucide-react';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
 import {
@@ -31,6 +29,10 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { handleError } from '@/helper/handleError';
 import { toast } from 'sonner';
+import Link from 'next/link';
+
+// Types
+type AdminStatus = 'ACTIVE' | 'BLOCK' | 'PENDING';
 
 type Admin = {
     id: string;
@@ -38,43 +40,189 @@ type Admin = {
     email: string;
     country: string;
     phoneNumber: string;
-    status: 'ACTIVE' | 'BLOCK' | 'PENDING';
+    status: AdminStatus;
 };
 
-const AdminTable = () => {
-    const [searchTerm, setSearchTerm] = React.useState('');
+type LoadingButton = {
+    id: string;
+    status: AdminStatus;
+} | null;
+
+// Constants
+const STATUS_CLASSES: Record<string, string> = {
+    ACTIVE: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
+    PENDING: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
+    BLOCK: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
+};
+
+// Utility functions
+const filterAdmins = (admins: Admin[], searchTerm: string): Admin[] => {
+    if (!searchTerm.trim()) return admins;
+    
+    const term = searchTerm.toLowerCase();
+    return admins.filter(
+        (admin) =>
+            admin.name.toLowerCase().includes(term) ||
+            admin.email.toLowerCase().includes(term) ||
+            admin.country.toLowerCase().includes(term)
+    );
+};
+
+// Components
+const TableSkeleton: React.FC = () => (
+    <div className="space-y-4">
+        <div className="flex items-center justify-between">
+            <div className="relative w-full max-w-sm">
+                <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-md animate-pulse" />
+            </div>
+        </div>
+
+        <div className="relative rounded-lg border border-gray-50 dark:border-neutral-800 bg-white dark:bg-neutral-900/80 shadow-sm">
+            <div className="p-4 space-y-5">
+                <div className="flex space-x-4">
+                    {Array.from({ length: 6 }).map((_, i) => (
+                        <div key={i} className="h-4 bg-gray-200 dark:bg-neutral-700 rounded flex-1 animate-pulse" />
+                    ))}
+                </div>
+
+                {Array.from({ length: 3 }).map((_, i) => (
+                    <div key={i} className="flex space-x-4">
+                        {Array.from({ length: 6 }).map((_, j) => (
+                            <div key={j} className="h-4 bg-gray-100 dark:bg-neutral-800 rounded flex-1 animate-pulse" />
+                        ))}
+                    </div>
+                ))}
+            </div>
+        </div>
+    </div>
+);
+
+interface ActionButtonProps {
+    icon: React.ElementType;
+    tooltip: string;
+    className: string;
+    onClick: () => void;
+    disabled?: boolean;
+    isLoading?: boolean;
+}
+
+const ActionButton: React.FC<ActionButtonProps> = ({
+    icon: Icon,
+    tooltip,
+    className,
+    onClick,
+    disabled = false,
+    isLoading = false,
+}) => (
+    <Tooltip>
+        <TooltipTrigger asChild>
+            <Button
+                variant="outline"
+                size="sm"
+                className={cn('h-8 w-8 p-0', className)}
+                onClick={onClick}
+                disabled={disabled || isLoading}
+            >
+                {isLoading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Icon className="h-4 w-4" />}
+            </Button>
+        </TooltipTrigger>
+        <TooltipContent>{tooltip}</TooltipContent>
+    </Tooltip>
+);
+
+// Custom hooks
+const useAdmins = () => {
     const [admins, setAdmins] = React.useState<Admin[]>([]);
     const [loading, setLoading] = React.useState(true);
-    const [updatingStatus, setUpdatingStatus] = React.useState<string | null>(null);
 
-    const fetchAdmins = async () => {
+    const fetchAdmins = React.useCallback(async () => {
         try {
             setLoading(true);
             const res = await fetch("/api/super-admin/admin", { cache: "no-store" });
+            if (!res.ok) throw new Error('Failed to fetch admins');
+            
             const data = await res.json();
-            setAdmins(data.admins);
+            setAdmins(data.admins || []);
         } catch (error) {
-            console.error("Failed to fetch admins:", error);
+            handleError(error);
+            setAdmins([]);
         } finally {
             setLoading(false);
         }
-    };
+    }, []);
 
     React.useEffect(() => {
         fetchAdmins();
-    }, []);
+    }, [fetchAdmins]);
 
-    console.log(admins);
+    return { admins, loading, refetch: fetchAdmins };
+};
 
-    const filteredData = React.useMemo(() => {
-        const term = searchTerm.toLowerCase();
-        return admins.filter(
-            (admin) =>
-                admin.name.toLowerCase().includes(term) ||
-                admin.email.toLowerCase().includes(term) ||
-                admin.country.toLowerCase().includes(term)
-        );
-    }, [searchTerm, admins]);
+const useStatusUpdate = (refetch: () => Promise<void>) => {
+    const [updatingStatus, setUpdatingStatus] = React.useState<string | null>(null);
+    const [loadingButton, setLoadingButton] = React.useState<LoadingButton>(null);
+
+    const updateStatus = React.useCallback(async (status: AdminStatus, id: string) => {
+        setLoadingButton({ id, status });
+        setUpdatingStatus(id);
+
+        try {
+            const res = await fetch(`/api/super-admin/admin/${id}/change-status`, {
+                method: "PATCH",
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({ statusName: status }),
+            });
+
+            if (!res.ok) throw new Error("Failed to update status");
+
+            await refetch();
+            toast.success("Status updated");
+        } catch (err) {
+            handleError(err);
+        } finally {
+            setUpdatingStatus(null);
+            setLoadingButton(null);
+        }
+    }, [refetch]);
+
+    return { updatingStatus, loadingButton, updateStatus };
+};
+
+const useDeleteAdmin = (refetch: () => Promise<void>) => {
+    const [deletingId, setDeletingId] = React.useState<string | null>(null);
+
+    const deleteAdmin = React.useCallback(async (id: string) => {
+        setDeletingId(id);
+        try {
+            const res = await fetch(`/api/super-admin/admin/${id}`, {
+                method: "DELETE",
+            });
+
+            if (!res.ok) throw new Error("Failed to delete admin");
+
+            toast.success("Deleted Successfully");
+            await refetch();
+        } catch (error) {
+            handleError(error);
+        } finally {
+            setDeletingId(null);
+        }
+    }, [refetch]);
+
+    return { deletingId, deleteAdmin };
+};
+
+// Main component
+const AdminTable: React.FC = () => {
+    const [searchTerm, setSearchTerm] = React.useState('');
+    const { admins, loading, refetch } = useAdmins();
+    const {  loadingButton, updateStatus } = useStatusUpdate(refetch);
+    const { deletingId, deleteAdmin } = useDeleteAdmin(refetch);
+
+    const filteredData = React.useMemo(
+        () => filterAdmins(admins, searchTerm),
+        [admins, searchTerm]
+    );
 
     const columns = React.useMemo<ColumnDef<Admin>[]>(() => [
         {
@@ -89,94 +237,74 @@ const AdminTable = () => {
         {
             accessorKey: 'email',
             header: 'Email',
-            cell: ({ getValue }) => (
-                <a href={`mailto:${getValue()}`} className=" hover:underline ">
-                    {getValue() as string}
-                </a>
-            ),
+            cell: ({ getValue }) => {
+                const email = getValue() as string;
+                return (
+                    <a 
+                        href={`mailto:${email}`} 
+                        className="hover:underline transition-colors"
+                    >
+                        {email}
+                    </a>
+                );
+            },
         },
-        { accessorKey: 'country', header: 'Country' },
+        { 
+            accessorKey: 'country', 
+            header: 'Country' 
+        },
         {
             accessorKey: 'phoneNumber',
             header: 'Phone',
             cell: ({ getValue }) => (
-                <span className="text-gray-600 dark:text-gray-400">{getValue() as string}</span>
+                <span className="text-gray-600 dark:text-gray-400">
+                    {getValue() as string}
+                </span>
             ),
         },
         {
             accessorKey: 'status',
             header: 'Status',
             cell: ({ getValue }) => {
-                const status = getValue() as Admin['status'];
+                const status = getValue() as AdminStatus;
+                const badgeClass = STATUS_CLASSES[status] || 
+                    'bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-200';
 
-                const statusClasses: Record<string, string> = {
-                    active: 'bg-green-100 text-green-800 dark:bg-green-900/30 dark:text-green-300',
-                    pending: 'bg-yellow-100 text-yellow-800 dark:bg-yellow-900/30 dark:text-yellow-300',
-                    inactive: 'bg-red-100 text-red-800 dark:bg-red-900/30 dark:text-red-300',
-                };
-
-                const badgeClass =
-                    statusClasses[status] || 'bg-gray-100 text-gray-800 dark:bg-gray-800/40 dark:text-gray-200';
-
-                return <Badge className={cn('capitalize', badgeClass)}>{status}</Badge>;
+                return (
+                    <Badge className={cn('capitalize', badgeClass)}>
+                        {status.toLowerCase()}
+                    </Badge>
+                );
             },
         },
         {
             id: 'actions',
             header: 'Actions',
             cell: ({ row }) => {
-                const { status } = row.original;
-                const id = row.original.id;
-                const isRejectable = status === 'ACTIVE' || status === 'PENDING';
-                const isActive = status === 'BLOCK' || status === 'PENDING';
-                const isUpdating = updatingStatus === id;
-
-                const ActionButton = ({
-                    icon: Icon,
-                    tooltip,
-                    className,
-                    disabled = false,
-                }: {
-                    icon: React.ElementType;
-                    tooltip: string;
-                    className: string;
-                    disabled?: boolean;
-                }) => (
-                    <Tooltip>
-                        <TooltipTrigger asChild>
-                            <Button
-                                variant="outline"
-                                size="sm"
-                                className={cn('h-8 w-8 p-0', className)}
-                                onClick={() => handleStatusChange(tooltip, id)}
-                                disabled={disabled || isUpdating}
-                            >
-                                {isUpdating ? (
-                                    <Loader2 className="h-4 w-4 animate-spin" />
-                                ) : (
-                                    <Icon className="h-4 w-4" />
-                                )}
-                            </Button>
-                        </TooltipTrigger>
-                        <TooltipContent>{tooltip}</TooltipContent>
-                    </Tooltip>
-                );
+                const { status, id } = row.original;
+                const canActivate = status === 'BLOCK' || status === 'PENDING';
+                const canBlock = status === 'ACTIVE' || status === 'PENDING';
+                const isDeleting = deletingId === id;
 
                 return (
                     <div className="flex gap-1">
-                        {isActive && (
+                        {canActivate && (
                             <ActionButton
                                 icon={Check}
-                                tooltip="Active"
+                                tooltip="Activate"
                                 className="hover:bg-green-50 text-green-600 dark:text-green-400 dark:hover:bg-green-900/30"
+                                onClick={() => updateStatus('ACTIVE', id)}
+                                isLoading={loadingButton?.id === id && loadingButton?.status === 'ACTIVE'}
                             />
                         )}
 
-                        {isRejectable && (
+                        {canBlock && (
                             <ActionButton
                                 icon={X}
                                 tooltip="Block"
                                 className="hover:bg-red-50 text-red-600 dark:text-red-400 dark:hover:bg-red-900/30"
+                                onClick={() => updateStatus('BLOCK', id)}
+                                isLoading={loadingButton?.id === id && loadingButton?.status === 'BLOCK'}
                             />
                         )}
 
@@ -185,26 +313,29 @@ const AdminTable = () => {
                                 <Button
                                     variant="outline"
                                     size="sm"
-                                    className={cn('h-8 w-8 p-0')}
-                                    // onClick={() => handleStatusChange(tooltip, id)}
-                                    // disabled={disabled || isUpdating}
+                                    className="h-8 w-8 p-0"
+                                    asChild
                                 >
-                                    {/* {isUpdating ? (
-                                        <Loader2 className="h-4 w-4 animate-spin" />
-                                    ) : (
-                                        <Icon className="h-4 w-4" />
-                                    )} */}
-
-                                    <Eye />
+                                    <Link href={`/super-admin/admins/${id}`}>
+                                        <Eye className="h-4 w-4" />
+                                    </Link>
                                 </Button>
                             </TooltipTrigger>
-                            <TooltipContent>View</TooltipContent>
+                            <TooltipContent>View Details</TooltipContent>
                         </Tooltip>
+
+                        <ActionButton
+                            icon={Trash}
+                            tooltip="Delete"
+                            className="hover:bg-red-50 text-red-600 dark:text-red-400 dark:hover:bg-red-900/30"
+                            onClick={() => deleteAdmin(id)}
+                            isLoading={isDeleting}
+                        />
                     </div>
                 );
             },
         },
-    ], [updatingStatus]);
+    ], [ loadingButton, deletingId, updateStatus, deleteAdmin ]);
 
     const table = useReactTable({
         data: filteredData,
@@ -212,69 +343,13 @@ const AdminTable = () => {
         getCoreRowModel: getCoreRowModel(),
     });
 
-    const handleStatusChange = async (status: string, id: string) => {
-        try {
-            setUpdatingStatus(id);
-            const res = await fetch(`/api/super-admin/admin/${id}/change-status`, {
-                method: "PATCH",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({ statusName: status.toUpperCase() }),
-            });
-
-            if (!res.ok) throw new Error("Failed to update status");
-
-            const data = await res.json();
-            await fetchAdmins();
-            toast.success("Status updated");
-            console.log("Status updated:", data);
-        } catch (err) {
-            handleError(err);
-        } finally {
-            setUpdatingStatus(null);
-        }
-    };
-    
-
-    const handleRefresh = () => {
-        fetchAdmins();
-    };
-
-    const TableSkeleton = () => (
-        <div className="space-y-4">
-            <div className="flex items-center justify-between">
-                <div className="relative w-full max-w-sm">
-                    <div className="h-10 bg-gray-200 dark:bg-gray-700 rounded-md animate-pulse"></div>
-                </div>
-            </div>
-
-            <div className="relative rounded-lg border border-gray-50 dark:border-neutral-800 bg-white dark:bg-neutral-900/80 shadow-sm">
-                <div className="p-4 space-y-5">
-                    <div className="flex space-x-4">
-                        {Array.from({ length: 6 }).map((_, i) => (
-                            <div key={i} className="h-4 bg-gray-200 dark:bg-neutral-700 rounded flex-1 animate-pulse"></div>
-                        ))}
-                    </div>
-
-                    {Array.from({ length: 3 }).map((_, i) => (
-                        <div key={i} className="flex space-x-4">
-                            {Array.from({ length: 6 }).map((_, j) => (
-                                <div key={j} className="h-4 bg-gray-100 dark:bg-neutral-800 rounded flex-1 animate-pulse"></div>
-                            ))}
-                        </div>
-                    ))}
-                </div>
-            </div>
-        </div>
-    );
-
     if (loading) {
         return <TableSkeleton />;
     }
 
     return (
         <div className="space-y-4">
+            {/* Search and Controls */}
             <div className="flex items-center justify-between">
                 <div className="relative w-full max-w-sm">
                     <Search className="absolute left-2 top-2.5 h-4 w-4 text-gray-500 dark:text-gray-400" />
@@ -287,33 +362,26 @@ const AdminTable = () => {
                 </div>
             </div>
 
+            {/* Table */}
             <div className="relative rounded-lg border border-gray-50 dark:border-neutral-800 bg-white dark:bg-neutral-900/30 shadow-sm">
                 <div className="absolute top-2 right-2">
                     <DropdownMenu>
                         <DropdownMenuTrigger asChild>
-                            <button className="text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white">
-                                <svg
-                                    xmlns="http://www.w3.org/2000/svg"
-                                    className="h-5 w-5"
-                                    viewBox="0 0 20 20"
-                                    fill="currentColor"
-                                >
-                                    <path d="M10 6a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM10 11.5a1.5 1.5 0 100-3 1.5 1.5 0 000 3zM10 17a1.5 1.5 0 100-3 1.5 1.5 0 000 3z" />
-                                </svg>
-                            </button>
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 text-gray-500 hover:text-gray-700 dark:text-gray-300 dark:hover:text-white"
+                            >
+                                <MoreVertical className="h-4 w-4" />
+                            </Button>
                         </DropdownMenuTrigger>
                         <DropdownMenuContent className="w-48">
-                            <DropdownMenuItem onClick={handleRefresh}>
+                            <DropdownMenuItem onClick={refetch}>
                                 <div className="flex items-center gap-2">
                                     {loading ? (
                                         <Loader2 className="h-4 w-4 animate-spin" />
                                     ) : (
-                                        <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
-                                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8" />
-                                            <path d="M21 3v5h-5" />
-                                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16" />
-                                            <path d="M3 21v-5h5" />
-                                        </svg>
+                                        <RefreshCw className="h-4 w-4" />
                                     )}
                                     Refresh
                                 </div>
@@ -323,6 +391,7 @@ const AdminTable = () => {
                         </DropdownMenuContent>
                     </DropdownMenu>
                 </div>
+
                 <TooltipProvider>
                     <Table>
                         <TableHeader>

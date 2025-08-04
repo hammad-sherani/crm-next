@@ -5,7 +5,7 @@ export const PATCH = async (req: Request, { params }: { params: Promise<{ id: st
     const  id  = (await params).id
     const { statusName } = await req.json();
 
-    const updatedAdmin = await prisma.admin.update({
+    const updatedAdmin = await prisma.user.update({
       where: { id },
       data: { status: statusName },
       select: { id: true, status: true },

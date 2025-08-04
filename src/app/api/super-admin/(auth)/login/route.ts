@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ message: "Email and password are required." }, { status: 400 });
     }
 
-    const admin = await prisma.superAdmin.findUnique({ where: { email } });
+    const admin = await prisma.user.findUnique({ where: { email } });
 
     if (!admin || !(await bcrypt.compare(password, admin.password))) {
       return NextResponse.json({ message: "Invalid credentials." }, { status: 401 });
