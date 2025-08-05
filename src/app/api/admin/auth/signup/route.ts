@@ -8,7 +8,6 @@ export async function POST(req: NextRequest) {
   try {
     const { name, email, password, country, phoneNumber } = await req.json();
 
-    // Validate fields
     if (!name || !email || !password || !country || !phoneNumber) {
       return NextResponse.json(
         { message: "All fields are required." },
@@ -16,7 +15,6 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Check existing user/admin by email or phone
     const existingUser = await prisma.user.findFirst({
       where: {
         OR: [{ email }, { phoneNumber }],
@@ -33,14 +31,11 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
-    // Generate OTP (6 digits) with 10 min expiry
     const otp = String(Math.floor(100000 + Math.random() * 900000));
     const expireVerifyOtp = new Date(Date.now() + 10 * 60 * 1000);
 
-    // Create new admin
     const newAdmin = await prisma.user.create({
       data: {
         name,
@@ -60,22 +55,20 @@ export async function POST(req: NextRequest) {
         country: true,
         phoneNumber: true,
         createdAt: true,
+        role: true
       },
     });
 
-    // Send OTP email
     await sendOtpEmail(email, otp);
 
-    // Generate JWT token
     const token = jwt.sign(
       { id: newAdmin.id, email: newAdmin.email, role: "ADMIN" },
       process.env.JWT_SECRET!,
       { expiresIn: "1d" }
     );
 
-    // Prepare response with cookie
     const response = NextResponse.json(
-      { message: "Admin created successfully.", user: newAdmin },
+      { message: "Verification OTP send to your email address.", user: newAdmin },
       { status: 201 }
     );
 
@@ -85,11 +78,11 @@ export async function POST(req: NextRequest) {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
-      maxAge: 60 * 60 * 24, // 1 day
+      maxAge: 60 * 60 * 24, 
       path: "/",
     });
 
-    return response; // ✅ Return response
+    return response; 
 
   } catch (error) {
     console.error("Error while signing up admin:", error);

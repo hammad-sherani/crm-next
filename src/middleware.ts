@@ -30,7 +30,7 @@ export async function middleware(req: NextRequest) {
       );
 
       if (matchedPath && !accessRules[matchedPath].includes(role)) {
-        return NextResponse.redirect(new URL("/404", req.url));
+        return NextResponse.redirect(new URL("/login", req.url));
       }
 
     } catch (err) {

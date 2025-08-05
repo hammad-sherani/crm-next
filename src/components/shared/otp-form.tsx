@@ -13,6 +13,7 @@ import useAuthStore from "@/store/auth.store";
 import { Loader2, Mail } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { motion } from "framer-motion";
+import { useRouter } from "next/navigation";
 
 export default function InputOTPControlled() {
   const [value, setValue] = React.useState("");
@@ -20,7 +21,8 @@ export default function InputOTPControlled() {
   const [isLoading, setIsLoading] = React.useState(false);
   const { user } = useAuthStore();
 
-  // Initialize timer from localStorage on component mount
+  const router = useRouter()
+
   React.useEffect(() => {
     const storedEndTime = localStorage.getItem('otp-resend-end-time');
     if (storedEndTime) {
@@ -31,13 +33,11 @@ export default function InputOTPControlled() {
     }
   }, []);
 
-  // Timer countdown effect
   React.useEffect(() => {
     let timer: NodeJS.Timeout;
     if (resendTimer > 0) {
       timer = setTimeout(() => setResendTimer(resendTimer - 1), 1000);
     } else if (resendTimer === 0) {
-      // Clear localStorage when timer reaches 0
       localStorage.removeItem('otp-resend-end-time');
     }
     return () => clearTimeout(timer);
@@ -64,7 +64,6 @@ export default function InputOTPControlled() {
 
       if (!res.ok) throw new Error(result.message || "OTP verification failed");
 
-      // Clear timer on successful verification
       localStorage.removeItem('otp-resend-end-time');
       setResendTimer(0);
 
@@ -73,6 +72,7 @@ export default function InputOTPControlled() {
         duration: 3000,
         className: "bg-neutral-900 text-green-400 border-neutral-700",
       });
+      router.push("/admin/dashboard")
     } catch (error: any) {
       toast.error(error.message || "Something went wrong", {
         position: "top-center",
@@ -86,8 +86,7 @@ export default function InputOTPControlled() {
 
   const handleResend = async () => {
     try {
-      // Set timer and store end time in localStorage
-      const timerDuration = 120; // 2 minutes
+      const timerDuration = 120; 
       const endTime = Date.now() + (timerDuration * 1000);
       localStorage.setItem('otp-resend-end-time', endTime.toString());
       setResendTimer(timerDuration);
@@ -108,7 +107,6 @@ export default function InputOTPControlled() {
         className: "bg-neutral-900 text-white border-neutral-700",
       });
     } catch (error: any) {
-      // If API fails, reset timer
       localStorage.removeItem('otp-resend-end-time');
       setResendTimer(0);
       
