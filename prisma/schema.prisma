@@ -27,21 +27,32 @@ enum ADMIN_STATUS {
 }
 
 model User {
-  id          String   @id @default(uuid())
-  name        String
-  email       String   @unique
-  password    String
-  phoneNumber String?  // sirf Admin ke liye optional
-  country     String?  // sirf Admin ke liye optional
-  status      ADMIN_STATUS? // sirf Admin ke liye optional
-  role        Role     @default(USER)
+  id               String         @id @default(uuid())
+  name             String
+  email            String         @unique
+  password         String
+
+  phoneNumber      String?        // Sirf Admin ke liye optional
+  country          String?        // Sirf Admin ke liye optional
+  status           ADMIN_STATUS?  // Sirf Admin ke liye optional
+  role             Role           @default(USER)
 
   // Self Relation (Admin → Users)
-  createdById String?
-  createdBy   User?      @relation("AdminCreatesUser", fields: [createdById], references: [id])
-  createdUsers User[]    @relation("AdminCreatesUser") // 👈 Opposite relation
+  createdById      String?
+  createdBy        User?          @relation("AdminCreatesUser", fields: [createdById], references: [id])
+  createdUsers     User[]         @relation("AdminCreatesUser")
 
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
+  // Email / OTP verification
+  isVerified       Boolean        @default(false)
+  verifyOtp        String?        // null if verified
+  expireVerifyOtp  DateTime?      // null if verified
+
+  // Profile & Soft delete
+  profile          String         @default("")  // or default placeholder image
+  isDeleted        Boolean        @default(false)
+
+  // Timestamps
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
 }
 

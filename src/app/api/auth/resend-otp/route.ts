@@ -1,23 +1,23 @@
 import { generateOtp } from "@/helper/function";
 import { NextResponse } from "next/server";
-import bcrypt from "bcrypt";
 import { sendOtpEmail } from "@/helper/otpEmail";
-import User from "@/models/user.model";
+import { prisma } from "@/lib/prisma";
 
-export const GET = async (req: Request) => {
+export const POST = async (req: Request) => {
+  const body = await req.json()
+  const { email } = body
   try {
-    const { searchParams } = new URL(req.url);
-    const email = searchParams.get("email");
-    const type = searchParams.get("type");
-
-    if (!email || !type) {
+    if (!email) {
       return NextResponse.json(
-        { success: false, message: "Email and type are required." },
+        { success: false, message: "Email is required." },
         { status: 400 }
       );
     }
 
-    const user = await User.findOne({ email });
+    const user = await prisma.user.findUnique({
+      where: { email: email },
+    });
+
     if (!user) {
       return NextResponse.json(
         { success: false, message: "User not found." },
@@ -26,7 +26,6 @@ export const GET = async (req: Request) => {
     }
 
     const otp = generateOtp();
-    const hashedOtp = await bcrypt.hash(otp, 10);
 
     const emailSent = await sendOtpEmail(email, otp);
     if (!emailSent) {
@@ -36,9 +35,17 @@ export const GET = async (req: Request) => {
       );
     }
 
-    user.otp = hashedOtp;
-    user.otpExpires = new Date(Date.now() + 10 * 60 * 1000); // 10 mins
-    await user.save();
+    const expireVerifyOtp = new Date(Date.now() + 10 * 60 * 1000);
+
+    await prisma.user.update(
+      {
+        where: { email: email },
+        data: {
+          verifyOtp: otp,
+          expireVerifyOtp: expireVerifyOtp
+        }
+      })
+
 
     return NextResponse.json(
       { success: true, message: "OTP has been sent successfully." },

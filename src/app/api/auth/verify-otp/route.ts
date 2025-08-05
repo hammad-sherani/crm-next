@@ -1,26 +1,25 @@
 // app/api/auth/verify-otp/route.ts
 
 import { NextResponse } from "next/server";
-import User from "@/models/user.model";
-import { connectDB } from "@/config/db";
-import bcrypt from "bcrypt";
+import { prisma } from "@/lib/prisma";
 
-export const POST = async (req: Request) => {
+export async function POST(req: Request) {
   try {
-    await connectDB();
+    const { email, otp } = await req.json();
 
-    const { email, otp, type } = await req.json();
-
-    if (!email || !otp || !type) {
+    if (!email || !otp) {
       return NextResponse.json(
-        { success: false, message: "Email, OTP, and type are required." },
+        { success: false, message: "Email and OTP are required." },
         { status: 400 }
       );
     }
 
     const trimmedEmail = email.trim().toLowerCase();
     const trimmedOtp = otp.trim();
-    const user = await User.findOne({ email: trimmedEmail });
+
+    const user = await prisma.user.findUnique({
+      where: { email: trimmedEmail },
+    });
 
     if (!user) {
       return NextResponse.json(
@@ -29,40 +28,31 @@ export const POST = async (req: Request) => {
       );
     }
 
-    if (user.otpExpiresAt && new Date() > user.otpExpiresAt) {
+    if (!user.expireVerifyOtp || new Date() > user.expireVerifyOtp) {
       return NextResponse.json(
         { success: false, message: "OTP has expired." },
         { status: 410 }
       );
     }
 
-    const isOtpValid = await bcrypt.compare(trimmedOtp, user.otp || "");
-    if (!isOtpValid) {
+    if (trimmedOtp !== user.verifyOtp) {
       return NextResponse.json(
         { success: false, message: "Invalid OTP." },
         { status: 401 }
       );
     }
 
-    // ✅ Clear OTP fields
-
-
-    if (type === "verify-email") {
-      user.isVerified = true;
-      user.otp = null;
-      user.otpExpiresAt = null;
-    }
-
-    await user.save();
+    await prisma.user.update({
+      where: { email: trimmedEmail },
+      data: {
+        isVerified: true,
+        verifyOtp: null,
+        expireVerifyOtp: null,
+      },
+    });
 
     return NextResponse.json(
-      {
-        success: true,
-        message:
-          type === "verify-email"
-            ? "Email verified successfully."
-            : "OTP verified successfully.",
-      },
+      { success: true, message: "Email verified successfully." },
       { status: 200 }
     );
   } catch (error) {
@@ -72,4 +62,4 @@ export const POST = async (req: Request) => {
       { status: 500 }
     );
   }
-};
+}

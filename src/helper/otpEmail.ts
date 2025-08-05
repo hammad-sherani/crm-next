@@ -10,7 +10,7 @@ import { transporter } from "./mailer";
  */
 export const sendOtpEmail = async (to: string, otp: string) => {
   const mailOptions: SendMailOptions = {
-    from: `"Your App" <${process.env.SMTP_USER}>`,
+    from: `"Your App" <${process.env.EMAIL_USER}>`,
     to,
     subject: "Your OTP Code",
     html: `

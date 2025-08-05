@@ -27,6 +27,7 @@ import {
 
 // ✅ Import world-countries
 import countries from "world-countries";
+import useAuthStore from "@/store/auth.store";
 
 const formattedCountries = countries.map((country) => ({
     label: country.name.common,
@@ -56,6 +57,7 @@ export default function AdminSignUpForm() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [isLoading, setIsLoading] = useState(false);
     const router = useRouter();
+    const {setUser} = useAuthStore()
 
     const {
         register,
@@ -84,7 +86,8 @@ export default function AdminSignUpForm() {
 
             reset();
             toast.success(result.message, { position: "top-center" });
-            router.push("/verify-email?type=verify-email");
+            setUser(result?.user)
+            router.push("/verify-email");
         } catch (error: any) {
             handleError(error);
         } finally {
