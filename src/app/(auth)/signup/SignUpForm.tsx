@@ -7,7 +7,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import Link from "next/link";
-import { useForm, UseFormRegister, Path } from "react-hook-form";
+import { useForm, UseFormRegister, Path, Controller } from "react-hook-form";
 import { yupResolver } from "@hookform/resolvers/yup";
 import * as yup from "yup";
 import { Icon } from "@iconify/react";
@@ -15,7 +15,24 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { handleError } from "@/helper/handleError";
+
+// ✅ ShadCN Select
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select";
+
+// ✅ Import world-countries
 import countries from "world-countries";
+
+const formattedCountries = countries.map((country) => ({
+    label: country.name.common,
+    value: country.cca2,
+    flag: country.flag,
+}));
 
 const schema = yup.object({
     name: yup.string().required("Name is required").min(3, "Minimum 3 characters"),
@@ -43,6 +60,7 @@ export default function AdminSignUpForm() {
     const {
         register,
         handleSubmit,
+        control,
         formState: { errors },
         reset,
     } = useForm<FormData>({
@@ -55,7 +73,7 @@ export default function AdminSignUpForm() {
         try {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const { confirmPassword, ...submitData } = data;
-            const res = await fetch("/api/super-admin/signup", {
+            const res = await fetch("/api/admin/auth/signup", {
                 method: "POST",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(submitData),
@@ -75,7 +93,7 @@ export default function AdminSignUpForm() {
     };
 
     return (
-        <Card className="overflow-hidden w-full  mx-auto">
+        <Card className="overflow-hidden w-full mx-auto bg-background text-foreground">
             <CardContent className="p-6 md:p-8">
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6" noValidate>
                     <div className="space-y-2 text-center">
@@ -92,7 +110,6 @@ export default function AdminSignUpForm() {
                             placeholder="Enter your full name"
                             register={register}
                             error={errors.name?.message}
-
                         />
                         <FormField
                             name="email"
@@ -109,13 +126,43 @@ export default function AdminSignUpForm() {
                             register={register}
                             error={errors.phoneNumber?.message}
                         />
-                        <FormField
-                            name="country"
-                            label="Country"
-                            placeholder="Enter your country"
-                            register={register}
-                            error={errors.country?.message}
-                        />
+
+                        {/* ✅ Country Dropdown with ShadCN Select */}
+                        <div className="space-y-2">
+                            <Label htmlFor="country" className="text-sm font-medium">
+                                Country
+                            </Label>
+                            <Controller
+                                name="country"
+                                control={control}
+                                render={({ field }) => (
+                                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                        <SelectTrigger
+                                            className={cn(
+                                                "w-full bg-background text-foreground border rounded-md p-2",
+                                                errors.country && "border-destructive"
+                                            )}
+                                        >
+                                            <SelectValue placeholder="Select your country" />
+                                        </SelectTrigger>
+                                        <SelectContent className="bg-background text-foreground max-h-64 overflow-y-auto">
+                                            {formattedCountries.map((c) => (
+                                                <SelectItem key={c.value} value={c.label}>
+                                                    <span className="flex items-center gap-2">
+                                                        <span>{c.flag}</span>
+                                                        <span>{c.label}</span>
+                                                    </span>
+                                                </SelectItem>
+                                            ))}
+                                        </SelectContent>
+                                    </Select>
+                                )}
+                            />
+                            {errors.country && (
+                                <p className="text-sm text-destructive">{errors.country.message}</p>
+                            )}
+                        </div>
+
                         <FormField
                             name="password"
                             label="Password"
@@ -191,7 +238,10 @@ function FormField<T extends Record<string, any>>({
                     type={type}
                     placeholder={placeholder}
                     autoComplete={autoComplete}
-                    className={cn("pr-10", error && "border-destructive focus-visible:ring-destructive")}
+                    className={cn(
+                        "pr-10 bg-background text-foreground",
+                        error && "border-destructive focus-visible:ring-destructive"
+                    )}
                     {...register(name)}
                 />
                 {icon && <div className="absolute right-3 top-1/2 -translate-y-1/2">{icon}</div>}
@@ -211,33 +261,4 @@ function PasswordToggle({ visible, onToggle }: { visible: boolean; onToggle: () 
             <Icon icon={visible ? "mdi:eye-off-outline" : "mdi:eye-outline"} className="h-4 w-4" />
         </button>
     );
-}
-
-
-interface Props {
-  value: string;
-  onChange: (value: string) => void;
-}
-
-const formattedCountries = countries.map((country) => ({
-  label: country.name.common,
-  value: country.cca2, // Use 2-letter ISO code
-  flag: country.flags.svg,
-}));
-
-function CountrySelect({ value, onChange }: Props) {
-  return (
-    <select
-      className="w-full border rounded-md p-2 text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-      value={value}
-      onChange={(e) => onChange(e.target.value)}
-    >
-      <option value="">Select Country</option>
-      {formattedCountries.map((country) => (
-        <option key={country.value} value={country.value}>
-          {country.label}
-        </option>
-      ))}
-    </select>
-  );
 }

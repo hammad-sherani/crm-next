@@ -68,7 +68,7 @@ export default function InputOTPControlled({
       <div className="text-center space-y-1">
         <h2 className="text-2xl font-semibold">Verify Your Identity</h2>
         <p className="text-muted-foreground text-sm">
-          Enter the 6-digit code sent to your email or phone number.
+          Enter the 6-digit code sent to your email.
         </p>
       </div>
 
