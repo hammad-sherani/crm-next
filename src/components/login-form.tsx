@@ -45,33 +45,48 @@ export function LoginForm({
   const router = useRouter()
 
   const loginMutation = useMutation({
-    mutationFn: (data: LoginFormData) => axiosInstance.post("/admin/auth/login", data),
-    onSuccess: (res) => {
-      toast.success(res.data.message || "Login successful")
-      setUser(res.data.user)
+    mutationFn: async (data: LoginFormData) => {
+      const res = await fetch("/admin/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(data),
+      });
 
-      if(res.data.user.isVerified == false) {
-        router.push("/verify-email")
-        return
+      if (!res.ok) {
+        const errorData = await res.json();
+        throw new Error(errorData.message || "Login failed");
       }
 
-      if (res.data.user.role === "USER") {
-        router.push("/user/dashboard")
+      return res.json(); // this becomes 'res' in onSuccess
+    },
+    onSuccess: (data) => {
+      toast.success(data.message || "Login successful");
+      setUser(data.user);
+
+      if (data.user.isVerified === false) {
+        router.push("/verify-email");
+        return;
       }
 
-      if (res.data.user.role === "ADMIN") {
-        router.push("/admin/dashboard")
+      if (data.user.role === "USER") {
+        router.push("/user/dashboard");
+      }
+
+      if (data.user.role === "ADMIN") {
+        router.push("/admin/dashboard");
       }
     },
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     onError: (error: any) => {
-      handleError(error)
+      handleError(error);
     },
-  })
+  });
 
   const onSubmit = (data: LoginFormData) => {
-    loginMutation.mutate(data)
-  }
+    loginMutation.mutate(data);
+  };
+
 
   return (
     <div className={cn("flex flex-col gap-6", className)} {...props}>
