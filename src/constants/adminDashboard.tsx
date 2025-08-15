@@ -51,10 +51,10 @@ export const createColumns = (
       enableHiding: false,
     },
     {
-      accessorKey: "username",
+      accessorKey: "name",
       header: "User Name",
       cell: ({ row }) => {
-        return <span className="font-medium capitalize">{row?.getValue("username")}</span>;
+        return <span className="font-medium capitalize">{row?.getValue("name")}</span>;
       },
     },
     {
@@ -70,12 +70,27 @@ export const createColumns = (
       ),
     },
     {
-      accessorKey: "status",
-      header: "Status",
-      cell: ({ row }) => {
-        return <span className="capitalize">{row.getValue("status") ? row.getValue("status") : "NA"}</span>;
-      }
-    },
+  accessorKey: "status",
+  header: "Status",
+  cell: ({ row }) => {
+    const status = (row.getValue("status") as string) || "NA";
+
+    const statusClass =
+      status.toLowerCase() === "active"
+        ? "bg-green-100/20 text-green-300"
+        : status.toLowerCase() === "blocked"
+        ? "bg-red-500/20 text-red-400"
+        : "bg-gray-500/20 text-gray-400";
+
+    return (
+      <span
+        className={`capitalize px-3 py-1 text-sm font-medium rounded-full ${statusClass}`}
+      >
+        {status}
+      </span>
+    );
+  },
+},
     {
       id: "actions",
       header: "Actions",

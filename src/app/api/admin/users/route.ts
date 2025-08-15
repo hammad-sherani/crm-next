@@ -6,6 +6,7 @@ import bcrypt from "bcrypt";
 import { prisma } from "@/lib/prisma";
 import jwt from "jsonwebtoken";
 
+
 // GET all users
 export const GET = async (req: NextRequest) => {
   try {
@@ -57,6 +58,7 @@ export const GET = async (req: NextRequest) => {
           isVerified: true,
           createdAt: true,
           updatedAt: true,
+          status: true,
         },
       }),
       prisma.user.count({ where }),
@@ -88,23 +90,39 @@ export const GET = async (req: NextRequest) => {
 };
 
 
-// POST - Create new user
+
+
 export const POST = async (req: NextRequest) => {
   try {
-    await connectDB();
+    const token = req.cookies.get("token")?.value;
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
+    }
+
+    let decoded: any;
+    try {
+      decoded = jwt.verify(token, process.env.JWT_SECRET!);
+    } catch (err) {
+      return NextResponse.json(
+        { success: false, message: "Invalid token", err },
+        { status: 401 }
+      );
+    }
 
     const body = await req.json();
-    const { username, email, password } = body;
+    const { name, email, password, phoneNumber } = body;
 
-    // Validation
-    if (!username || !email || !password) {
+    // 3. Validation
+    if (!name || !email || !password || !phoneNumber) {
       return NextResponse.json(
-        { success: false, message: "Username, email, and password are required" },
+        { success: false, message: "All Fields are required" },
         { status: 400 }
       );
     }
 
-    // Email validation
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
     if (!emailRegex.test(email)) {
       return NextResponse.json(
@@ -113,7 +131,6 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    // Password length validation
     if (password.length < 6) {
       return NextResponse.json(
         { success: false, message: "Password must be at least 6 characters long" },
@@ -121,36 +138,46 @@ export const POST = async (req: NextRequest) => {
       );
     }
 
-    // Check if user already exists
-    const existingUser = await User.findOne({
-      $or: [{ email }, { username }]
+    const existingUser = await prisma.user.findFirst({
+      where: {
+        OR: [
+          { email: email.toLowerCase().trim() },
+          { phoneNumber }
+        ]
+      }
     });
 
     if (existingUser) {
       return NextResponse.json(
-        { success: false, message: "User with this email or username already exists" },
+        { success: false, message: "User with this email or phone already exists" },
         { status: 409 }
       );
     }
 
-    // Hash password
-    const saltRounds = 12;
-    const hashedPassword = await bcrypt.hash(password, saltRounds);
+    const hashedPassword = await bcrypt.hash(password, 12);
 
-    // Create new user
-    const newUser = new User({
-      username: username.toLowerCase().trim(),
-      email: email.toLowerCase().trim(),
-      password: hashedPassword,
+    const userResponse = await prisma.user.create({
+      data: {
+        name: name.toLowerCase().trim(),
+        email: email.toLowerCase().trim(),
+        password: hashedPassword,
+        phoneNumber,
+        isVerified: true,
+        createdById: decoded.id,
+        status: "ACTIVE",
+      },
+      select: {
+        id: true,
+        name: true,
+        email: true,
+        phoneNumber: true,
+        status: true,
+        role: true,
+        isVerified: true,
+        createdAt: true,
+        updatedAt: true
+      }
     });
-
-    await newUser.save();
-
-    // Remove sensitive fields from response
-    const userResponse = newUser.toObject();
-    delete userResponse.password;
-    delete userResponse.otp;
-    delete userResponse.otpExpiresAt;
 
     return NextResponse.json(
       {
@@ -161,24 +188,16 @@ export const POST = async (req: NextRequest) => {
       { status: 201 }
     );
 
-  } catch (error: any) {
-    console.log("Error creating user:", error);
-
-    // Handle mongoose validation errors
-    if (error.name === 'ValidationError') {
-      const messages = Object.values(error.errors).map((err: any) => err.message);
-      return NextResponse.json(
-        { success: false, message: messages.join(', ') },
-        { status: 400 }
-      );
-    }
-
+  } catch (error) {
+    console.error("Error creating user:", error);
     return NextResponse.json(
       { success: false, message: "Failed to create user" },
       { status: 500 }
     );
   }
 };
+
+
 
 export const PUT = async (req: NextRequest) => {
   try {

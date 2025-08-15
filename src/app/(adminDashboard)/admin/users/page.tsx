@@ -33,6 +33,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useDeleteUser, useStatusChange } from "@/hooks/admin/useUser";
+import AddUserModal from "@/components/modals/admin/addUserModal";
 
 
 const useUsers = () =>
@@ -132,14 +133,14 @@ export default function UserTable() {
 
   return (
     <div className="space-y-4">
-      <div className="flex items-center">
+      <div className="flex items-center justify-between">
         <Input
           placeholder="Filter emails..."
           value={(table.getColumn("email")?.getFilterValue() as string) ?? ""}
           onChange={(e) => table.getColumn("email")?.setFilterValue(e.target.value)}
           className="max-w-sm"
         />
-        <Button className="ml-auto">Add User</Button>
+        <AddUserModal />
       </div>
 
       <div className="rounded-md border">
