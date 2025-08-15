@@ -50,11 +50,16 @@ export function LoginForm({
       toast.success(res.data.message || "Login successful")
       setUser(res.data.user)
 
-      if (res.data.user.role === "user") {
+      if(res.data.user.isVerified == false) {
+        router.push("/verify-email")
+        return
+      }
+
+      if (res.data.user.role === "USER") {
         router.push("/user/dashboard")
       }
 
-      if (res.data.user.role === "admin") {
+      if (res.data.user.role === "ADMIN") {
         router.push("/admin/dashboard")
       }
     },

@@ -20,8 +20,8 @@ export async function middleware(req: NextRequest) {
 
       // ✅ Access control
       const accessRules: Record<string, string[]> = {
-        "/admin": ["admin", "SUPER_ADMIN"],
-        "/user": ["user"],
+        "/admin": ["ADMIN", "SUPER_ADMIN"],
+        "/user": ["USER"],
         "/super-admin": ["SUPER_ADMIN"],
       };
 
@@ -46,7 +46,7 @@ export async function middleware(req: NextRequest) {
     const isProtected = protectedPaths.some(path => pathname.startsWith(path));
 
     if (isProtected && !isLoginPage) {
-      return NextResponse.redirect(new URL("/super-admin/login", req.url));
+      return NextResponse.redirect(new URL("/login", req.url));
     }
   }
 
