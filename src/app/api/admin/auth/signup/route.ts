@@ -44,9 +44,10 @@ export async function POST(req: NextRequest) {
         country,
         phoneNumber,
         role: "ADMIN",
-        status: "PENDING",
+        status: "ACTIVE",
         otp, 
-        otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000), 
+        otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000),
+         
       },
       select: {
         id: true,
