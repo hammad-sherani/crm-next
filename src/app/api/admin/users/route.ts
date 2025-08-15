@@ -3,43 +3,64 @@ import { NextRequest, NextResponse } from "next/server";
 import { connectDB } from "@/config/db";
 import User from "@/models/user.model";
 import bcrypt from "bcrypt";
+import { prisma } from "@/lib/prisma";
+import jwt from "jsonwebtoken";
 
 // GET all users
 export const GET = async (req: NextRequest) => {
   try {
-    await connectDB();
-
-    // Get query parameters for filtering and pagination
     const { searchParams } = new URL(req.url);
-    const page = parseInt(searchParams.get('page') || '1');
-    const limit = parseInt(searchParams.get('limit') || '10');
-    const search = searchParams.get('search') || '';
-    const status = searchParams.get('status') || '';
-    const role = searchParams.get('role') || 'user';
 
-    // Build query
-    const query: any = { role };
-    
-    if (search) {
-      query.$or = [
-        { username: { $regex: search, $options: 'i' } },
-        { email: { $regex: search, $options: 'i' } }
-      ];
+    const page = Number(searchParams.get("page") || 1);
+    const limit = Number(searchParams.get("limit") || 10);
+    const search = searchParams.get("search")?.trim() || "";
+    const status = searchParams.get("status")?.trim() || "";
+    const role = searchParams.get("role")?.trim() || "USER";
+
+    // 1️⃣ Token se current user ID le lo
+    const token = req.cookies.get("token")?.value;
+    if (!token) {
+      return NextResponse.json(
+        { success: false, message: "Unauthorized" },
+        { status: 401 }
+      );
     }
 
-    if (status) {
-      query.status = status;
-    }
+    const decoded: any = jwt.verify(token, process.env.JWT_SECRET!);
+    const currentUserId = decoded.id;
 
-    // Execute query with pagination
-    const users = await User.find(query)
-      .select("-password -otp -otpExpiresAt")
-      .limit(limit)
-      .skip((page - 1) * limit)
-      .sort({ createdAt: -1 })
-      .lean();
+    // 2️⃣ Prisma-friendly query
+    const where: any = {
+      role,
+      createdById: currentUserId, // Filter by admin ID
+      ...(status && { status }),
+      ...(search && {
+        OR: [
+          { name: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+        ],
+      }),
+    };
 
-    const total = await User.countDocuments(query);
+    // 3️⃣ Fetch users with pagination
+    const [users, total] = await Promise.all([
+      prisma.user.findMany({
+        where,
+        skip: (page - 1) * limit,
+        take: limit,
+        orderBy: { createdAt: "desc" },
+        select: {
+          id: true,
+          name: true,
+          email: true,
+          role: true,
+          isVerified: true,
+          createdAt: true,
+          updatedAt: true,
+        },
+      }),
+      prisma.user.count({ where }),
+    ]);
 
     return NextResponse.json(
       {
@@ -49,14 +70,13 @@ export const GET = async (req: NextRequest) => {
           page,
           limit,
           total,
-          pages: Math.ceil(total / limit)
-        }
+          pages: Math.ceil(total / limit),
+        },
       },
       { status: 200 }
     );
-
   } catch (error) {
-    console.log("Error in Fetching users:", error);
+    console.error("Error in fetching users:", error);
     return NextResponse.json(
       {
         success: false,
@@ -66,6 +86,7 @@ export const GET = async (req: NextRequest) => {
     );
   }
 };
+
 
 // POST - Create new user
 export const POST = async (req: NextRequest) => {
@@ -142,7 +163,7 @@ export const POST = async (req: NextRequest) => {
 
   } catch (error: any) {
     console.log("Error creating user:", error);
-    
+
     // Handle mongoose validation errors
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map((err: any) => err.message);
@@ -204,7 +225,7 @@ export const PUT = async (req: NextRequest) => {
 
   } catch (error: any) {
     console.log("Error in bulk update:", error);
-    
+
     if (error.name === 'ValidationError') {
       const messages = Object.values(error.errors).map((err: any) => err.message);
       return NextResponse.json(

@@ -22,7 +22,6 @@ import {
 } from "@/components/ui/table";
 import { createColumns, User } from "@/constants/adminDashboard";
 import { useQuery } from "@tanstack/react-query";
-import axiosInstance from "@/lib/axios";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -40,12 +39,17 @@ const useUsers = () =>
   useQuery<User[]>({
     queryKey: ["users"],
     queryFn: async () => {
-      const res = await axiosInstance.get("/admin/users");
-      return res.data.data as User[];
+      const res = await fetch("/api/admin/users");
+      if (!res.ok) {
+        throw new Error("Failed to fetch users");
+      }
+      const data = await res.json();
+      return data.data as User[]; // assuming API response shape is { data: [...] }
     },
     refetchOnWindowFocus: false,
     staleTime: 5 * 60 * 1000,
   });
+
 
 export default function UserTable() {
   const { data: users, isLoading, error } = useUsers();
@@ -56,22 +60,18 @@ export default function UserTable() {
   const [sorting, setSorting] = React.useState<SortingState>([]);
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>([]);
 
-  // Action handlers
   const handleEdit = (userId: string) => {
     console.log("Edit user:", userId);
-    // Add your edit logic here
   };
 
   const handleView = (userId: string) => {
     console.log("View user:", userId);
-    // Add your view logic here
   };
 
   const handleDelete = (userId: string) => {
     setUserToDelete(userId);
   };
 
-  // Fixed: Wrap the mutation to match the expected signature
   const handleStatusChange = (userId: string, status: string) => {
     statusChangeMutation.mutate({ userId, status });
   };
