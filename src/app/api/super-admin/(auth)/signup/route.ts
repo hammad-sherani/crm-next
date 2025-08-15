@@ -5,7 +5,7 @@ import bcrypt from "bcrypt";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    console.log(body);
+    // console.log(body);
     
     const { name, email, password } = body;
 

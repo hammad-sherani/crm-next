@@ -34,7 +34,7 @@ export async function POST(req: NextRequest) {
     const hashedPassword = await bcrypt.hash(password, 10);
 
     const otp = String(Math.floor(100000 + Math.random() * 900000));
-    const expireVerifyOtp = new Date(Date.now() + 10 * 60 * 1000);
+    // const expireVerifyOtp = new Date(Date.now() + 10 * 60 * 1000);
 
     const newAdmin = await prisma.user.create({
       data: {
@@ -45,8 +45,8 @@ export async function POST(req: NextRequest) {
         phoneNumber,
         role: "ADMIN",
         status: "PENDING",
-        verifyOtp: otp,
-        expireVerifyOtp,
+        otp, 
+        otpExpiresAt: new Date(Date.now() + 10 * 60 * 1000), 
       },
       select: {
         id: true,

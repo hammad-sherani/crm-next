@@ -55,7 +55,7 @@ export default function InputOTPControlled() {
 
     setIsLoading(true);
     try {
-      const res = await fetch("/api/auth/verify-otp", {
+      const res = await fetch("/api/admin/auth/verify-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user?.email, otp: value }),
@@ -91,7 +91,7 @@ export default function InputOTPControlled() {
       localStorage.setItem('otp-resend-end-time', endTime.toString());
       setResendTimer(timerDuration);
 
-      const res = await fetch("/api/auth/resend-otp", {
+      const res = await fetch("/api/admin/auth/resend-otp", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ email: user?.email }),

@@ -19,7 +19,6 @@ import useAuthStore from "@/store/auth.store"
 import { handleError } from "@/helper/handleError"
 import { useRouter } from "next/navigation"
 
-// ✅ Yup schema
 const loginSchema = yup.object({
   email: yup.string().email("Invalid email").required("Email is required"),
   password: yup.string().min(6, "Min 6 characters").required("Password is required"),
@@ -46,7 +45,7 @@ export function LoginForm({
   const router = useRouter()
 
   const loginMutation = useMutation({
-    mutationFn: (data: LoginFormData) => axiosInstance.post("/auth/login", data),
+    mutationFn: (data: LoginFormData) => axiosInstance.post("/admin/auth/login", data),
     onSuccess: (res) => {
       toast.success(res.data.message || "Login successful")
       setUser(res.data.user)

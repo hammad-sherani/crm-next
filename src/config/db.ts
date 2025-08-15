@@ -1,4 +1,3 @@
-import { handleError } from "@/helper/handleError";
 import mongoose from "mongoose";
 
 export const connectDB = async () => {
@@ -9,6 +8,6 @@ export const connectDB = async () => {
         const db = await mongoose.connect(dbUri as string);
         console.log(`MongoDB connected: ${db.connection.host}`);
     } catch (error) {
-        handleError(error);
+        console.log(error);
     }
 }

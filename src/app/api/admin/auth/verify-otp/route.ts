@@ -28,14 +28,14 @@ export async function POST(req: Request) {
       );
     }
 
-    if (!user.expireVerifyOtp || new Date() > user.expireVerifyOtp) {
+    if (!user.otpExpiresAt || new Date() > user.otpExpiresAt) {
       return NextResponse.json(
         { success: false, message: "OTP has expired." },
         { status: 410 }
       );
     }
 
-    if (trimmedOtp !== user.verifyOtp) {
+    if (trimmedOtp !== user.otp) {
       return NextResponse.json(
         { success: false, message: "Invalid OTP." },
         { status: 401 }
@@ -46,8 +46,8 @@ export async function POST(req: Request) {
       where: { email: trimmedEmail },
       data: {
         isVerified: true,
-        verifyOtp: null,
-        expireVerifyOtp: null,
+        otp: null,
+        otpExpiresAt: null,
       },
     });
 

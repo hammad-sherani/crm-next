@@ -1,36 +1,26 @@
 import jwt from "jsonwebtoken";
 
 interface User {
-  _id: string; 
-  email: string;
-  role: string;
-}
-
-interface JwtPayload {
   id: string;
   email: string;
-  role: string;
 }
 
-export const createJwt = async (user: User): Promise<string> => {
+const JWT_EXPIRY = "12h";
+
+export function createJwt(user: User): string {
   const jwtSecret = process.env.JWT_SECRET;
-
   if (!jwtSecret) {
-    console.error("JWT_SECRET is not defined in environment variables.");
-    throw new Error("JWT_SECRET is missing");
+    throw new Error("JWT_SECRET is not defined");
   }
-
-  const payload: JwtPayload = {
-    id: user._id.toString(),
-    email: user.email,
-    role: user.role,
-  };
 
   try {
-    const token = jwt.sign(payload, jwtSecret, { expiresIn: "12h" });
-    return token;
+    return jwt.sign(
+      { id: user.id, email: user.email },
+      jwtSecret,
+      { expiresIn: JWT_EXPIRY }
+    );
   } catch (error) {
-    console.error("Failed to create JWT:", error);
+    console.error("JWT creation failed:", error);
     throw new Error("Failed to generate JWT");
   }
-};
+}

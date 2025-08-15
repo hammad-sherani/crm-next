@@ -41,8 +41,8 @@ export const POST = async (req: Request) => {
       {
         where: { email: email },
         data: {
-          verifyOtp: otp,
-          expireVerifyOtp: expireVerifyOtp
+          otp,
+          otpExpiresAt: expireVerifyOtp
         }
       })
 
